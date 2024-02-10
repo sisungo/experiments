@@ -1,50 +1,39 @@
+mod rule;
+mod tools;
+
+use std::path::PathBuf;
+
 #[derive(clap::Parser)]
 struct Cmdline {
     #[arg(short, long)]
-    merge_lines: bool,
+    rule: PathBuf,
 
     #[arg(short, long)]
-    duplicate_newline: bool,
+    output: Option<PathBuf>,
 
-    file: String,
+    file: PathBuf,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cmdline: Cmdline = clap::Parser::parse();
+
     let mut s = std::fs::read_to_string(&cmdline.file)?;
-    if s.contains("\r\n") {
-        s = dos_to_unix(&s);
+    let dos = s.contains('\r');
+    s = tools::dos2unix(s);
+
+    let rules = rule::parse(&std::fs::read_to_string(&cmdline.rule)?)?;
+    for rule in rules {
+        s = rule.run(s);
     }
 
-    if cmdline.merge_lines {
-        s = merge_lines(&s);
+    if dos {
+        s = tools::unix2dos(s);
     }
-
-    if cmdline.duplicate_newline {
-        s = s.replace('\n', "\n\n");
-    }
-
-    println!("{s}");
+    let path = match cmdline.output.as_ref() {
+        Some(x) => x,
+        None => &cmdline.file,
+    };
+    std::fs::write(path, s.as_bytes())?;
 
     Ok(())
-}
-
-fn dos_to_unix(s: &str) -> String {
-    s.replace("\r\n", "\n")
-}
-
-fn merge_lines(s: &str) -> String {
-    s.chars()
-        .fold(Vec::with_capacity(s.len()), |mut acc, x| {
-            match x {
-                '\n' => match acc.last() {
-                    Some('。' | '.') => acc.push('\n'),
-                    _ => {}
-                },
-                x => acc.push(x),
-            }
-            acc
-        })
-        .into_iter()
-        .collect()
 }

@@ -8,3 +8,4 @@ publish = false
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
+thiserror = "1"
