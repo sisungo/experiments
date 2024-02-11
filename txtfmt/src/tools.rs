@@ -79,3 +79,17 @@ pub fn trim_begin(s: String, param: Option<&str>) -> String {
 pub fn trim_end(s: String, param: Option<&str>) -> String {
     generate_trim!(s, param, trim_end_matches, trim_end)
 }
+
+pub fn append(mut s: String, param: &str) -> String {
+    s.push_str(param);
+    s
+}
+
+pub fn append_line(mut s: String, param: &str) -> String {
+    if !(s.bytes().last() == Some(b'\n')) {
+        s.push('\n');
+    }
+    s.push_str(param);
+    s.push('\n');
+    s
+}

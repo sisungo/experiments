@@ -11,6 +11,38 @@ macro_rules! procedure_trim_matcher {
     };
 }
 
+macro_rules! procedure_ifuntil_matcher {
+    ($v:expr, $a:expr, $b:expr) => {
+        match $v {
+            "if" => Self::If($a, $b),
+            "until" => Self::RepeatUntil($a, $b),
+            _ => unreachable!(),
+        }
+    };
+}
+
+macro_rules! procedure_oneliteral_matcher {
+    ($v:expr, $p:expr) => {
+        match $v {
+            "append" => Self::Append($p),
+            "appendline" => Self::AppendLine($p),
+            "opb" => Self::OnParaBegin($p),
+            "mpbw" => Self::MakeParaBeginWith($p),
+            _ => unreachable!(),
+        }
+    };
+}
+
+macro_rules! condition_allany_matcher {
+    ($v:expr, $a:expr, $b:expr) => {
+        match $v {
+            "all" => Self::All(Box::new($a), Box::new($b)),
+            "any" => Self::Any(Box::new($a), Box::new($b)),
+            _ => unreachable!(),
+        }
+    };
+}
+
 #[derive(Debug, Clone)]
 pub enum Procedure {
     Replace(String, String),
@@ -20,7 +52,11 @@ pub enum Procedure {
     Trim(Option<String>),
     TrimBegin(Option<String>),
     TrimEnd(Option<String>),
+    Append(String),
+    AppendLine(String),
     RepeatN(u32, Box<Procedure>),
+    RepeatUntil(Condition, Box<Procedure>),
+    If(Condition, Box<Procedure>),
 }
 impl Procedure {
     pub fn run(&self, s: String) -> String {
@@ -33,6 +69,10 @@ impl Procedure {
             Self::TrimBegin(mat) => crate::tools::trim_begin(s, mat.as_deref()),
             Self::TrimEnd(mat) => crate::tools::trim_end(s, mat.as_deref()),
             Self::RepeatN(n, p) => Self::repeatn(*n, p, s),
+            Self::Append(p) => crate::tools::append(s, p),
+            Self::AppendLine(p) => crate::tools::append_line(s, p),
+            Self::RepeatUntil(cond, p) => Self::repeat_until(cond, p, s),
+            Self::If(cond, p) => Self::if_do(cond, p, s),
         }
     }
 
@@ -43,17 +83,36 @@ impl Procedure {
         s
     }
 
+    fn if_do(cond: &Condition, p: &Self, s: String) -> String {
+        if cond.run(&s) {
+            p.run(s)
+        } else {
+            s
+        }
+    }
+
+    fn repeat_until(cond: &Condition, p: &Self, mut s: String) -> String {
+        while !cond.run(&s) {
+            s = p.run(s);
+        }
+        s
+    }
+
     fn parse_tokens(tokens: &[Token]) -> Result<Self, Error> {
         if let Some(Token::Ident(ident)) = tokens.first() {
             match &ident[..] {
                 "replace" => Self::try_parse_replace(&tokens[1..]),
                 "unsplit_lines" => Self::try_parse_unsplit_lines(&tokens[1..]),
-                "on_para_begin" => Self::try_parse_on_para_begin(&tokens[1..]),
-                "make_para_begin_with" => Self::try_parse_make_para_begin_with(&tokens[1..]),
+                "on_para_begin" => Self::try_parse_oneliteral("opb", &tokens[1..]),
+                "make_para_begin_with" => Self::try_parse_oneliteral("mpbw", &tokens[1..]),
                 "trim" => Self::try_parse_trim("", &tokens[1..]),
                 "trim_begin" => Self::try_parse_trim("begin", &tokens[1..]),
                 "trim_end" => Self::try_parse_trim("end", &tokens[1..]),
                 "repeatn" => Self::try_parse_repeatn(&tokens[1..]),
+                "repeat_until" => Self::try_parse_ifuntil("until", &tokens[1..]),
+                "append" => Self::try_parse_oneliteral("append", &tokens[1..]),
+                "append_line" => Self::try_parse_oneliteral("appendline", &tokens[1..]),
+                "if" => Self::try_parse_ifuntil("if", &tokens[1..]),
                 _ => Err(Error::FnNotFound(ident.clone())),
             }
         } else {
@@ -90,7 +149,7 @@ impl Procedure {
         Ok(Self::UnsplitLines)
     }
 
-    fn try_parse_on_para_begin(tokens: &[Token]) -> Result<Self, Error> {
+    fn try_parse_oneliteral(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
         let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
         let right_paren = matches!(tokens.get(2), Some(Token::RightParen));
         let valid_len = tokens.len() == 3;
@@ -101,21 +160,7 @@ impl Procedure {
             return Err(Error::Expected("literal", tokens.get(1).cloned()));
         };
 
-        Ok(Self::OnParaBegin(content.clone()))
-    }
-
-    fn try_parse_make_para_begin_with(tokens: &[Token]) -> Result<Self, Error> {
-        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
-        let right_paren = matches!(tokens.get(2), Some(Token::RightParen));
-        let valid_len = tokens.len() == 3;
-        if !(left_paren && right_paren && valid_len) {
-            return Err(Error::BadFunctionCall);
-        }
-        let Some(Token::Literal(content)) = tokens.get(1) else {
-            return Err(Error::Expected("literal", tokens.get(1).cloned()));
-        };
-
-        Ok(Self::MakeParaBeginWith(content.clone()))
+        Ok(procedure_oneliteral_matcher!(var, content.clone()))
     }
 
     fn try_parse_trim(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
@@ -158,6 +203,18 @@ impl Procedure {
         let p = Self::parse_tokens(&tokens[3..tokens.len() - 1])?;
         Ok(Self::RepeatN(times, Box::new(p)))
     }
+
+    fn try_parse_ifuntil(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        let right_paren = matches!(tokens.last(), Some(Token::RightParen));
+        if !(left_paren && right_paren) {
+            return Err(Error::BadFunctionCall);
+        }
+        let (cond, proc) = parse_arg2(&tokens[1..tokens.len() - 1])?;
+        let proc = Self::parse_tokens(proc)?;
+        let cond = Condition::parse_tokens(cond)?;
+        Ok(procedure_ifuntil_matcher!(var, cond, Box::new(proc)))
+    }
 }
 impl FromStr for Procedure {
     type Err = Error;
@@ -179,6 +236,78 @@ pub fn parse(s: &str) -> Result<Vec<Procedure>, Error> {
     }
 
     Ok(procedures)
+}
+
+#[derive(Debug, Clone)]
+pub enum Condition {
+    Contains(String),
+    Not(Box<Condition>),
+    All(Box<Condition>, Box<Condition>),
+    Any(Box<Condition>, Box<Condition>),
+    True,
+    False,
+}
+impl Condition {
+    pub fn run(&self, s: &str) -> bool {
+        match self {
+            Self::Contains(pat) => s.contains(pat),
+            Self::Not(cond) => !cond.run(s),
+            Self::All(a, b) => a.run(s) && b.run(s),
+            Self::Any(a, b) => a.run(s) || b.run(s),
+            Self::True => true,
+            Self::False => false,
+        }
+    }
+
+    pub fn parse_tokens(tokens: &[Token]) -> Result<Self, Error> {
+        if let Some(Token::Ident(ident)) = tokens.first() {
+            match &ident[..] {
+                "not" => Self::try_parse_not(&tokens[1..]),
+                "contains" => Self::try_parse_contains(&tokens[1..]),
+                "all" => Self::try_parse_allany("all", &tokens[1..]),
+                "any" => Self::try_parse_allany("any", &tokens[1..]),
+                "true" => Ok(Self::True),
+                "false" => Ok(Self::False),
+                _ => Err(Error::FnNotFound(ident.clone())),
+            }
+        } else {
+            Err(Error::Expected("ident", tokens.first().cloned()))
+        }
+    }
+
+    fn try_parse_not(tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        let right_paren = matches!(tokens.last(), Some(Token::RightParen));
+        if !(left_paren && right_paren) {
+            return Err(Error::BadFunctionCall);
+        }
+        let cond = Self::parse_tokens(&tokens[1..tokens.len() - 1])?;
+        Ok(Self::Not(Box::new(cond)))
+    }
+
+    fn try_parse_contains(tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        let right_paren = matches!(tokens.get(2), Some(Token::RightParen));
+        if !(left_paren && right_paren) {
+            return Err(Error::BadFunctionCall);
+        }
+        let Some(Token::Literal(pat)) = tokens.get(1) else {
+            return Err(Error::Expected("literal", tokens.get(1).cloned()));
+        };
+        Ok(Self::Contains(pat.clone()))
+    }
+
+    fn try_parse_allany(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        let right_paren = matches!(tokens.last(), Some(Token::RightParen));
+        if !(left_paren && right_paren) {
+            return Err(Error::BadFunctionCall);
+        }
+        let (a, b) = parse_arg2(&tokens[1..tokens.len() - 1])?;
+        let a = Self::parse_tokens(a)?;
+        let b = Self::parse_tokens(b)?;
+        Ok(condition_allany_matcher!(var, a, b))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -251,6 +380,34 @@ pub fn tokenize(s: &str) -> Result<Vec<Token>, Error> {
     }
 
     Ok(tokens)
+}
+
+fn parse_arg2(tokens: &[Token]) -> Result<(&[Token], &[Token]), Error> {
+    // Input: do_a(do_b(), "a"), do_c()
+    // Output I: do_a(do_b())
+    // Output II: do_c()
+    let mut current_parens = 0;
+    let mut comma = None;
+    for (pos, token) in tokens.iter().enumerate() {
+        match token {
+            Token::Comma => if current_parens == 0 {
+                comma = Some(pos);
+            },
+            Token::LeftParen => current_parens += 1,
+            Token::RightParen => current_parens -= 1,
+            _ => (),
+        }
+    };
+    if current_parens != 0 {
+        return Err(Error::BadFunctionCall);
+    }
+    let Some(comma) = comma else {
+        return Err(Error::BadFunctionCall);
+    };
+    if tokens.len() == comma {
+        return Err(Error::BadFunctionCall);
+    }
+    Ok((&tokens[0..comma], &tokens[comma + 1..]))
 }
 
 #[derive(Debug, thiserror::Error)]
