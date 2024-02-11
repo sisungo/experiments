@@ -5,6 +5,8 @@ pub enum Procedure {
     Replace(String, String),
     UnsplitLines,
     OnParaBegin(String),
+    Trim(Option<String>),
+    TrimBegin(Option<String>),
 }
 impl Procedure {
     pub fn run(&self, s: String) -> String {
@@ -12,6 +14,8 @@ impl Procedure {
             Self::Replace(from, to) => crate::tools::replace(s, (from, to)),
             Self::UnsplitLines => crate::tools::unsplit_lines(s),
             Self::OnParaBegin(content) => crate::tools::on_para_begin(s, content),
+            Self::Trim(mat) => crate::tools::trim(s, mat.as_deref()),
+            Self::TrimBegin(mat) => crate::tools::trim_begin(s, mat.as_deref()),
         }
     }
 
@@ -19,14 +23,15 @@ impl Procedure {
         let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
         let right_paren = matches!(tokens.get(4), Some(Token::RightParen));
         let comma = matches!(tokens.get(2), Some(Token::Comma));
-        if !(left_paren && right_paren && comma) {
+        let valid_len = tokens.len() == 5;
+        if !(left_paren && right_paren && comma && valid_len) {
             return Err(Error::BadFunctionCall);
         }
         let Some(Token::Literal(from)) = tokens.get(1) else {
-            return Err(Error::Expected("literal"));
+            return Err(Error::Expected("literal", tokens.get(1).cloned()));
         };
         let Some(Token::Literal(to)) = tokens.get(3) else {
-            return Err(Error::Expected("literal"));
+            return Err(Error::Expected("literal", tokens.get(3).cloned()));
         };
 
         Ok(Self::Replace(from.clone(), to.clone()))
@@ -35,7 +40,8 @@ impl Procedure {
     fn try_parse_unsplit_lines(tokens: &[Token]) -> Result<Self, Error> {
         let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
         let right_paren = matches!(tokens.get(1), Some(Token::RightParen));
-        if !(left_paren && right_paren) {
+        let valid_len = tokens.len() == 2;
+        if !(left_paren && right_paren && valid_len) {
             return Err(Error::BadFunctionCall);
         }
 
@@ -45,14 +51,47 @@ impl Procedure {
     fn try_parse_on_para_begin(tokens: &[Token]) -> Result<Self, Error> {
         let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
         let right_paren = matches!(tokens.get(2), Some(Token::RightParen));
-        if !(left_paren && right_paren) {
+        let valid_len = tokens.len() == 3;
+        if !(left_paren && right_paren && valid_len) {
             return Err(Error::BadFunctionCall);
         }
         let Some(Token::Literal(content)) = tokens.get(1) else {
-            return Err(Error::Expected("literal"));
+            return Err(Error::Expected("literal", tokens.get(1).cloned()));
         };
 
         Ok(Self::OnParaBegin(content.clone()))
+    }
+
+    fn try_parse_trim(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        match tokens.len() {
+            2 => {
+                let right_paren = matches!(tokens.get(2), Some(Token::RightParen));
+                if !(left_paren && right_paren) {
+                    return Err(Error::BadFunctionCall);
+                }
+                Ok(match var {
+                    "" => Self::Trim(None),
+                    "begin" => Self::TrimBegin(None),
+                    _ => unreachable!(),
+                })
+            }
+            3 => {
+                let right_paren = matches!(tokens.get(3), Some(Token::RightParen));
+                if !(left_paren && right_paren) {
+                    return Err(Error::BadFunctionCall);
+                }
+                let Some(Token::Literal(mat)) = tokens.get(1) else {
+                    return Err(Error::Expected("literal", tokens.get(1).cloned()));
+                };
+                Ok(match var {
+                    "" => Self::Trim(Some(mat.to_owned())),
+                    "begin" => Self::TrimBegin(Some(mat.to_owned())),
+                    _ => unreachable!(),
+                })
+            }
+            _ => Err(Error::BadFunctionCall),
+        }
     }
 }
 impl FromStr for Procedure {
@@ -65,10 +104,12 @@ impl FromStr for Procedure {
                 "replace" => Self::try_parse_replace(&tokens[1..]),
                 "unsplit_lines" => Self::try_parse_unsplit_lines(&tokens[1..]),
                 "on_para_begin" => Self::try_parse_on_para_begin(&tokens[1..]),
+                "trim" => Self::try_parse_trim("", &tokens[1..]),
+                "trim_begin" => Self::try_parse_trim("begin", &tokens[1..]),
                 _ => Err(Error::FnNotFound(ident.clone())),
             }
         } else {
-            Err(Error::Expected("ident"))
+            Err(Error::Expected("ident", tokens.first().cloned()))
         }
     }
 }
@@ -80,13 +121,16 @@ pub fn parse(s: &str) -> Result<Vec<Procedure>, Error> {
         if l.starts_with("//") {
             continue;
         }
+        if l.trim().is_empty() {
+            continue;
+        }
         procedures.push(l.parse()?);
     }
 
     Ok(procedures)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
     Ident(String),
     Comma,
@@ -169,8 +213,8 @@ pub enum Error {
     #[error("incomplete literal")]
     IncompleteLiteral,
 
-    #[error("expected {0}")]
-    Expected(&'static str),
+    #[error("expected {0}, found {1:?}")]
+    Expected(&'static str, Option<Token>),
 
     #[error("function not found: {0}")]
     FnNotFound(String),
