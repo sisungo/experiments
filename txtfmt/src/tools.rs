@@ -1,6 +1,20 @@
 use std::fmt::Write;
 
-const SENTENCE_FINALIZERS: &[char] = &['。', '.', '！', '!', '”', '’', '\'', '"', '」'];
+const SENTENCE_FINALIZERS: &[char] = &['。', '.', '！', '!', '”', '’', '\'', '"', '」', '?'];
+
+macro_rules! generate_trim {
+    ($s:expr, $p:expr, $m:ident, $f:ident) => {
+        $s.lines()
+            .fold(String::with_capacity($s.len()), |mut acc, line| {
+                let trimmed = match $p {
+                    Some(x) => line.$m(|c| x.chars().any(|e| e == c)),
+                    None => line.$f(),
+                };
+                writeln!(&mut acc, "{trimmed}").unwrap();
+                acc
+            })
+    };
+}
 
 pub fn dos2unix(s: String) -> String {
     s.replace("\r\n", "\n")
@@ -40,20 +54,28 @@ pub fn on_para_begin(s: String, param: &str) -> String {
     )
 }
 
+pub fn make_para_begin_with(s: String, param: &str) -> String {
+    s.lines().fold(
+        String::with_capacity(s.len() + param.len()),
+        |mut acc, x| {
+            if !x.starts_with(param) {
+                writeln!(&mut acc, "{param}{x}").unwrap();
+            } else {
+                writeln!(&mut acc, "{x}").unwrap();
+            }
+            acc
+        },
+    )
+}
+
 pub fn trim(s: String, param: Option<&str>) -> String {
-    match param {
-        Some(x) if x.chars().count() == 1 => s.trim_matches(x.chars().next().unwrap()),
-        Some(x) => s.trim_matches(|c| x.chars().any(|e| e == c)),
-        None => s.trim(),
-    }
-    .to_owned()
+    generate_trim!(s, param, trim_matches, trim)
 }
 
 pub fn trim_begin(s: String, param: Option<&str>) -> String {
-    match param {
-        Some(x) if x.chars().count() == 1 => s.trim_start_matches(x.chars().next().unwrap()),
-        Some(x) => s.trim_start_matches(|c| x.chars().any(|e| e == c)),
-        None => s.trim_start(),
-    }
-    .to_owned()
+    generate_trim!(s, param, trim_start_matches, trim_start)
+}
+
+pub fn trim_end(s: String, param: Option<&str>) -> String {
+    generate_trim!(s, param, trim_end_matches, trim_end)
 }

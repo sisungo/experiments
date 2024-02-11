@@ -1,12 +1,26 @@
 use std::str::FromStr;
 
+macro_rules! procedure_trim_matcher {
+    ($v:expr, $c:expr) => {
+        match $v {
+            "" => Self::Trim($c),
+            "begin" => Self::TrimBegin($c),
+            "end" => Self::TrimEnd($c),
+            _ => unreachable!(),
+        }
+    };
+}
+
 #[derive(Debug, Clone)]
 pub enum Procedure {
     Replace(String, String),
     UnsplitLines,
     OnParaBegin(String),
+    MakeParaBeginWith(String),
     Trim(Option<String>),
     TrimBegin(Option<String>),
+    TrimEnd(Option<String>),
+    RepeatN(u32, Box<Procedure>),
 }
 impl Procedure {
     pub fn run(&self, s: String) -> String {
@@ -14,8 +28,36 @@ impl Procedure {
             Self::Replace(from, to) => crate::tools::replace(s, (from, to)),
             Self::UnsplitLines => crate::tools::unsplit_lines(s),
             Self::OnParaBegin(content) => crate::tools::on_para_begin(s, content),
+            Self::MakeParaBeginWith(content) => crate::tools::make_para_begin_with(s, content),
             Self::Trim(mat) => crate::tools::trim(s, mat.as_deref()),
             Self::TrimBegin(mat) => crate::tools::trim_begin(s, mat.as_deref()),
+            Self::TrimEnd(mat) => crate::tools::trim_end(s, mat.as_deref()),
+            Self::RepeatN(n, p) => Self::repeatn(*n, p, s),
+        }
+    }
+
+    fn repeatn(n: u32, p: &Self, mut s: String) -> String {
+        for _ in 0..n {
+            s = p.run(s);
+        }
+        s
+    }
+
+    fn parse_tokens(tokens: &[Token]) -> Result<Self, Error> {
+        if let Some(Token::Ident(ident)) = tokens.first() {
+            match &ident[..] {
+                "replace" => Self::try_parse_replace(&tokens[1..]),
+                "unsplit_lines" => Self::try_parse_unsplit_lines(&tokens[1..]),
+                "on_para_begin" => Self::try_parse_on_para_begin(&tokens[1..]),
+                "make_para_begin_with" => Self::try_parse_make_para_begin_with(&tokens[1..]),
+                "trim" => Self::try_parse_trim("", &tokens[1..]),
+                "trim_begin" => Self::try_parse_trim("begin", &tokens[1..]),
+                "trim_end" => Self::try_parse_trim("end", &tokens[1..]),
+                "repeatn" => Self::try_parse_repeatn(&tokens[1..]),
+                _ => Err(Error::FnNotFound(ident.clone())),
+            }
+        } else {
+            Err(Error::Expected("ident", tokens.first().cloned()))
         }
     }
 
@@ -62,36 +104,59 @@ impl Procedure {
         Ok(Self::OnParaBegin(content.clone()))
     }
 
+    fn try_parse_make_para_begin_with(tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        let right_paren = matches!(tokens.get(2), Some(Token::RightParen));
+        let valid_len = tokens.len() == 3;
+        if !(left_paren && right_paren && valid_len) {
+            return Err(Error::BadFunctionCall);
+        }
+        let Some(Token::Literal(content)) = tokens.get(1) else {
+            return Err(Error::Expected("literal", tokens.get(1).cloned()));
+        };
+
+        Ok(Self::MakeParaBeginWith(content.clone()))
+    }
+
     fn try_parse_trim(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
         let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
         match tokens.len() {
             2 => {
-                let right_paren = matches!(tokens.get(2), Some(Token::RightParen));
+                let right_paren = matches!(tokens.get(1), Some(Token::RightParen));
                 if !(left_paren && right_paren) {
                     return Err(Error::BadFunctionCall);
                 }
-                Ok(match var {
-                    "" => Self::Trim(None),
-                    "begin" => Self::TrimBegin(None),
-                    _ => unreachable!(),
-                })
+                Ok(procedure_trim_matcher!(var, None))
             }
             3 => {
-                let right_paren = matches!(tokens.get(3), Some(Token::RightParen));
+                let right_paren = matches!(tokens.get(2), Some(Token::RightParen));
                 if !(left_paren && right_paren) {
                     return Err(Error::BadFunctionCall);
                 }
                 let Some(Token::Literal(mat)) = tokens.get(1) else {
                     return Err(Error::Expected("literal", tokens.get(1).cloned()));
                 };
-                Ok(match var {
-                    "" => Self::Trim(Some(mat.to_owned())),
-                    "begin" => Self::TrimBegin(Some(mat.to_owned())),
-                    _ => unreachable!(),
-                })
+                Ok(procedure_trim_matcher!(var, Some(mat.clone())))
             }
             _ => Err(Error::BadFunctionCall),
         }
+    }
+
+    fn try_parse_repeatn(tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        let right_paren = matches!(tokens.last(), Some(Token::RightParen));
+        let comma = matches!(tokens.get(2), Some(Token::Comma));
+        if !(left_paren && right_paren && comma) {
+            return Err(Error::BadFunctionCall);
+        }
+        let Some(Token::Ident(times)) = tokens.get(1) else {
+            return Err(Error::Expected("ident", tokens.get(1).cloned()));
+        };
+        let Ok(times) = times.parse::<u32>() else {
+            return Err(Error::Expected("number", Some(Token::Ident(times.clone()))));
+        };
+        let p = Self::parse_tokens(&tokens[3..tokens.len() - 1])?;
+        Ok(Self::RepeatN(times, Box::new(p)))
     }
 }
 impl FromStr for Procedure {
@@ -99,18 +164,7 @@ impl FromStr for Procedure {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let tokens = tokenize(s)?;
-        if let Some(Token::Ident(ident)) = tokens.first() {
-            match &ident[..] {
-                "replace" => Self::try_parse_replace(&tokens[1..]),
-                "unsplit_lines" => Self::try_parse_unsplit_lines(&tokens[1..]),
-                "on_para_begin" => Self::try_parse_on_para_begin(&tokens[1..]),
-                "trim" => Self::try_parse_trim("", &tokens[1..]),
-                "trim_begin" => Self::try_parse_trim("begin", &tokens[1..]),
-                _ => Err(Error::FnNotFound(ident.clone())),
-            }
-        } else {
-            Err(Error::Expected("ident", tokens.first().cloned()))
-        }
+        Self::parse_tokens(&tokens)
     }
 }
 
@@ -118,10 +172,7 @@ pub fn parse(s: &str) -> Result<Vec<Procedure>, Error> {
     let mut procedures = Vec::with_capacity(s.len() / 8);
 
     for l in s.lines() {
-        if l.starts_with("//") {
-            continue;
-        }
-        if l.trim().is_empty() {
+        if l.starts_with("//") || l.trim().is_empty() {
             continue;
         }
         procedures.push(l.parse()?);
