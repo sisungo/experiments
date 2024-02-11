@@ -11,11 +11,18 @@ struct Cmdline {
     #[arg(short, long)]
     output: Option<PathBuf>,
 
+    #[arg(short = 'D', long)]
+    define: Vec<String>,
+
     file: PathBuf,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cmdline: Cmdline = clap::Parser::parse();
+
+    for def in cmdline.define {
+        rule::addflag(def);
+    }
 
     let mut s = std::fs::read_to_string(&cmdline.file)?;
     let dos = s.contains('\r');

@@ -1,4 +1,5 @@
-use std::str::FromStr;
+use once_cell::sync::Lazy;
+use std::{collections::HashSet, fmt::Write, str::FromStr, sync::RwLock};
 
 macro_rules! procedure_trim_matcher {
     ($v:expr, $c:expr) => {
@@ -28,6 +29,8 @@ macro_rules! procedure_oneliteral_matcher {
             "appendline" => Self::AppendLine($p),
             "opb" => Self::OnParaBegin($p),
             "mpbw" => Self::MakeParaBeginWith($p),
+            "addflag" => Self::AddFlag($p),
+            "delflag" => Self::DelFlag($p),
             _ => unreachable!(),
         }
     };
@@ -43,6 +46,19 @@ macro_rules! condition_allany_matcher {
     };
 }
 
+macro_rules! condition_oneliteral_matcher {
+    ($v:expr, $p:expr) => {
+        match $v {
+            "contains" => Self::Contains($p),
+            "content_eq" => Self::ContentEq($p),
+            "flag" => Self::Flag($p),
+            _ => unreachable!(),
+        }
+    };
+}
+
+static FLAGS: Lazy<RwLock<HashSet<String>>> = Lazy::new(RwLock::default);
+
 #[derive(Debug, Clone)]
 pub enum Procedure {
     Replace(String, String),
@@ -57,6 +73,9 @@ pub enum Procedure {
     RepeatN(u32, Box<Procedure>),
     RepeatUntil(Condition, Box<Procedure>),
     If(Condition, Box<Procedure>),
+    AddFlag(String),
+    DelFlag(String),
+    EachLine(Box<Procedure>),
 }
 impl Procedure {
     pub fn run(&self, s: String) -> String {
@@ -73,6 +92,15 @@ impl Procedure {
             Self::AppendLine(p) => crate::tools::append_line(s, p),
             Self::RepeatUntil(cond, p) => Self::repeat_until(cond, p, s),
             Self::If(cond, p) => Self::if_do(cond, p, s),
+            Self::AddFlag(flag) => {
+                addflag(flag.clone());
+                s
+            }
+            Self::DelFlag(flag) => {
+                delflag(flag);
+                s
+            }
+            Self::EachLine(p) => Self::each_line(p, s),
         }
     }
 
@@ -89,6 +117,14 @@ impl Procedure {
         } else {
             s
         }
+    }
+
+    fn each_line(p: &Self, s: String) -> String {
+        s.lines()
+            .fold(String::with_capacity(s.len()), |mut acc, line| {
+                writeln!(&mut acc, "{}", p.run(line.to_owned())).unwrap();
+                acc
+            })
     }
 
     fn repeat_until(cond: &Condition, p: &Self, mut s: String) -> String {
@@ -113,6 +149,9 @@ impl Procedure {
                 "append" => Self::try_parse_oneliteral("append", &tokens[1..]),
                 "append_line" => Self::try_parse_oneliteral("appendline", &tokens[1..]),
                 "if" => Self::try_parse_ifuntil("if", &tokens[1..]),
+                "addflag" => Self::try_parse_oneliteral("addflag", &tokens[1..]),
+                "delflag" => Self::try_parse_oneliteral("delflag", &tokens[1..]),
+                "each_line" => Self::try_parse_each_line(&tokens[1..]),
                 _ => Err(Error::FnNotFound(ident.clone())),
             }
         } else {
@@ -215,6 +254,16 @@ impl Procedure {
         let cond = Condition::parse_tokens(cond)?;
         Ok(procedure_ifuntil_matcher!(var, cond, Box::new(proc)))
     }
+
+    fn try_parse_each_line(tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        let right_paren = matches!(tokens.last(), Some(Token::RightParen));
+        if !(left_paren && right_paren) {
+            return Err(Error::BadFunctionCall);
+        }
+        let proc = Self::parse_tokens(&tokens[1..tokens.len() - 1])?;
+        Ok(Self::EachLine(Box::new(proc)))
+    }
 }
 impl FromStr for Procedure {
     type Err = Error;
@@ -241,33 +290,39 @@ pub fn parse(s: &str) -> Result<Vec<Procedure>, Error> {
 #[derive(Debug, Clone)]
 pub enum Condition {
     Contains(String),
+    ContentEq(String),
     Not(Box<Condition>),
     All(Box<Condition>, Box<Condition>),
     Any(Box<Condition>, Box<Condition>),
     True,
     False,
+    Flag(String),
 }
 impl Condition {
     pub fn run(&self, s: &str) -> bool {
         match self {
             Self::Contains(pat) => s.contains(pat),
+            Self::ContentEq(pat) => s == pat,
             Self::Not(cond) => !cond.run(s),
             Self::All(a, b) => a.run(s) && b.run(s),
             Self::Any(a, b) => a.run(s) || b.run(s),
             Self::True => true,
             Self::False => false,
+            Self::Flag(f) => flag(f),
         }
     }
 
-    pub fn parse_tokens(tokens: &[Token]) -> Result<Self, Error> {
+    fn parse_tokens(tokens: &[Token]) -> Result<Self, Error> {
         if let Some(Token::Ident(ident)) = tokens.first() {
             match &ident[..] {
                 "not" => Self::try_parse_not(&tokens[1..]),
-                "contains" => Self::try_parse_contains(&tokens[1..]),
+                "contains" => Self::try_parse_oneliteral("contains", &tokens[1..]),
+                "content_eq" => Self::try_parse_oneliteral("content_eq", &tokens[1..]),
                 "all" => Self::try_parse_allany("all", &tokens[1..]),
                 "any" => Self::try_parse_allany("any", &tokens[1..]),
                 "true" => Ok(Self::True),
                 "false" => Ok(Self::False),
+                "flag" => Self::try_parse_oneliteral("flag", &tokens[1..]),
                 _ => Err(Error::FnNotFound(ident.clone())),
             }
         } else {
@@ -285,7 +340,7 @@ impl Condition {
         Ok(Self::Not(Box::new(cond)))
     }
 
-    fn try_parse_contains(tokens: &[Token]) -> Result<Self, Error> {
+    fn try_parse_oneliteral(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
         let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
         let right_paren = matches!(tokens.get(2), Some(Token::RightParen));
         if !(left_paren && right_paren) {
@@ -294,7 +349,7 @@ impl Condition {
         let Some(Token::Literal(pat)) = tokens.get(1) else {
             return Err(Error::Expected("literal", tokens.get(1).cloned()));
         };
-        Ok(Self::Contains(pat.clone()))
+        Ok(condition_oneliteral_matcher!(var, pat.clone()))
     }
 
     fn try_parse_allany(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
@@ -319,7 +374,7 @@ pub enum Token {
     RightParen,
 }
 
-pub fn tokenize(s: &str) -> Result<Vec<Token>, Error> {
+fn tokenize(s: &str) -> Result<Vec<Token>, Error> {
     let mut tokens = Vec::with_capacity(s.len() / 4);
     let mut in_literal = false;
     let mut in_escape = false;
@@ -390,14 +445,16 @@ fn parse_arg2(tokens: &[Token]) -> Result<(&[Token], &[Token]), Error> {
     let mut comma = None;
     for (pos, token) in tokens.iter().enumerate() {
         match token {
-            Token::Comma => if current_parens == 0 {
-                comma = Some(pos);
-            },
+            Token::Comma => {
+                if current_parens == 0 {
+                    comma = Some(pos);
+                }
+            }
             Token::LeftParen => current_parens += 1,
             Token::RightParen => current_parens -= 1,
             _ => (),
         }
-    };
+    }
     if current_parens != 0 {
         return Err(Error::BadFunctionCall);
     }
@@ -408,6 +465,18 @@ fn parse_arg2(tokens: &[Token]) -> Result<(&[Token], &[Token]), Error> {
         return Err(Error::BadFunctionCall);
     }
     Ok((&tokens[0..comma], &tokens[comma + 1..]))
+}
+
+pub fn addflag(s: String) {
+    FLAGS.write().unwrap().insert(s);
+}
+
+pub fn delflag(s: &str) {
+    FLAGS.write().unwrap().remove(s);
+}
+
+fn flag(s: &str) -> bool {
+    FLAGS.read().unwrap().contains(s)
 }
 
 #[derive(Debug, thiserror::Error)]

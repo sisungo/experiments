@@ -86,7 +86,7 @@ pub fn append(mut s: String, param: &str) -> String {
 }
 
 pub fn append_line(mut s: String, param: &str) -> String {
-    if !(s.bytes().last() == Some(b'\n')) {
+    if s.bytes().last() != Some(b'\n') {
         s.push('\n');
     }
     s.push_str(param);
