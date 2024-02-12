@@ -67,6 +67,8 @@ macro_rules! condition_ctrcmp_matcher {
     ($v:expr, $a:expr, $b:expr) => {
         match $v {
             "eq" => Self::CounterEq($a, $b),
+            "lt" => Self::CounterLt($a, $b),
+            "mt" => Self::CounterMt($a, $b),
             _ => unreachable!(),
         }
     };
@@ -339,30 +341,34 @@ impl Procedure {
     }
 
     fn try_parse_repeatn(tokens: &[Token]) -> Result<Self, Error> {
-        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
-        let right_paren = matches!(tokens.last(), Some(Token::RightParen));
-        let comma = matches!(tokens.get(2), Some(Token::Comma));
-        if !(left_paren && right_paren && comma) {
+        let (times, body) = parse_condblk(tokens)?;
+        let left_paren = matches!(body.first(), Some(Token::LeftParen));
+        let right_paren = matches!(body.last(), Some(Token::RightParen));
+        if !(left_paren && right_paren) {
             return Err(Error::BadFunctionCall);
         }
-        let Some(Token::Ident(times)) = tokens.get(1) else {
-            return Err(Error::Expected("ident", tokens.get(1).cloned()));
+        let Some(Token::Ident(times)) = times.first() else {
+            return Err(Error::Expected("ident", times.first().cloned()));
         };
         let Ok(times) = times.parse::<u32>() else {
             return Err(Error::Expected("number", Some(Token::Ident(times.clone()))));
         };
-        let p = Self::parse_tokens(&tokens[3..tokens.len() - 1])?;
+        let mut body = body.to_vec();
+        body.insert(0, Token::Ident("lambda".into()));
+        let p = Self::parse_tokens(&body)?;
         Ok(Self::RepeatN(times, Box::new(p)))
     }
 
     fn try_parse_ifuntil(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
-        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
-        let right_paren = matches!(tokens.last(), Some(Token::RightParen));
+        let (cond, body) = parse_condblk(tokens)?;
+        let left_paren = matches!(body.first(), Some(Token::LeftParen));
+        let right_paren = matches!(body.last(), Some(Token::RightParen));
         if !(left_paren && right_paren) {
             return Err(Error::BadFunctionCall);
         }
-        let (cond, proc) = parse_arg2(&tokens[1..tokens.len() - 1])?;
-        let proc = Self::parse_tokens(proc)?;
+        let mut body = body.to_vec();
+        body.insert(0, Token::Ident("lambda".into()));
+        let proc = Self::parse_tokens(&body)?;
         let cond = Condition::parse_tokens(cond)?;
         Ok(procedure_ifuntil_matcher!(var, cond, Box::new(proc)))
     }
@@ -393,16 +399,18 @@ impl Procedure {
     }
 
     fn try_parse_storeproc(tokens: &[Token]) -> Result<Self, Error> {
-        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
-        let right_paren = matches!(tokens.last(), Some(Token::RightParen));
-        let comma = matches!(tokens.get(2), Some(Token::Comma));
-        if !(left_paren && right_paren && comma) {
+        let (name, body) = parse_condblk(tokens)?;
+        let left_paren = matches!(body.first(), Some(Token::LeftParen));
+        let right_paren = matches!(body.last(), Some(Token::RightParen));
+        if !(left_paren && right_paren) {
             return Err(Error::BadFunctionCall);
         }
-        let Some(Token::Literal(name)) = tokens.get(1) else {
-            return Err(Error::Expected("literal", tokens.get(1).cloned()));
+        let Some(Token::Literal(name)) = name.first() else {
+            return Err(Error::Expected("literal", name.first().cloned()));
         };
-        let p = Self::parse_tokens(&tokens[3..tokens.len() - 1])?;
+        let mut body = body.to_vec();
+        body.insert(0, Token::Ident("lambda".into()));
+        let p = Self::parse_tokens(&body)?;
         Ok(Self::StoreProc(name.clone(), Box::new(p)))
     }
 
@@ -492,6 +500,8 @@ pub enum Condition {
     False,
     Flag(String),
     CounterEq(String, String),
+    CounterLt(String, String),
+    CounterMt(String, String),
 }
 impl Condition {
     pub fn run(&self, s: &str) -> bool {
@@ -506,6 +516,12 @@ impl Condition {
             Self::Flag(f) => flag(f),
             Self::CounterEq(a, b) => {
                 counter(a).unwrap_or_default() == counter(b).unwrap_or_default()
+            }
+            Self::CounterLt(a, b) => {
+                counter(a).unwrap_or_default() < counter(b).unwrap_or_default()
+            }
+            Self::CounterMt(a, b) => {
+                counter(a).unwrap_or_default() > counter(b).unwrap_or_default()
             }
         }
     }
@@ -522,6 +538,8 @@ impl Condition {
                 "false" => Ok(Self::False),
                 "flag" => Self::try_parse_oneliteral("flag", &tokens[1..]),
                 "ctreq" => Self::try_parse_ctrcmp("eq", &tokens[1..]),
+                "ctrlt" => Self::try_parse_ctrcmp("lt", &tokens[1..]),
+                "ctrmt" => Self::try_parse_ctrcmp("mt", &tokens[1..]),
                 _ => Err(Error::FnNotFound(ident.clone())),
             }
         } else {
@@ -681,6 +699,37 @@ fn parse_arg2(tokens: &[Token]) -> Result<(&[Token], &[Token]), Error> {
         return Err(Error::BadFunctionCall);
     }
     Ok((&tokens[0..comma], &tokens[comma + 1..]))
+}
+
+fn parse_condblk(tokens: &[Token]) -> Result<(&[Token], &[Token]), Error> {
+    // Input: (do_b()) { ... }
+    // Output I: do_b()
+    // Output II: { ... }
+    let mut current_parens = 0;
+    let mut stop = None;
+    for (pos, token) in tokens.iter().enumerate() {
+        match token {
+            Token::LeftParen => current_parens += 1,
+            Token::RightParen => {
+                current_parens -= 1;
+                if current_parens == 0 {
+                    stop = Some(pos);
+                    break;
+                }
+            },
+            _ => (),
+        }
+    }
+    if current_parens != 0 {
+        return Err(Error::BadFunctionCall);
+    }
+    let Some(stop) = stop else {
+        return Err(Error::BadFunctionCall);
+    };
+    if tokens.len() == stop {
+        return Err(Error::BadFunctionCall);
+    }
+    Ok((&tokens[1..stop], &tokens[stop + 1..]))
 }
 
 fn parse_argn(mut remaining: &[Token]) -> Vec<&[Token]> {

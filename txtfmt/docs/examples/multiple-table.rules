@@ -1,0 +1,39 @@
+// Outputs 9x9 multiply table to the text buffer.
+
+// The procedure, "mul", is used to calculate multiply operations.
+//
+// Input counters are counters: "_A_mul_a" and "_A_mul_b".
+// The calculated result will be stored to the counter, "_R_mul".
+//
+// The TeXT ForMaTter does not support multiply yet, so we manually implemented the
+// function. However, this will still be kept when it is supported as a builtin
+// because it can make demonstrate for the "storeproc" function.
+storeproc("mul") ( \
+    initctr("0", 0), \
+    initctr("-1", -1), \
+    initctr("_R_mul", 0), \
+    repeat_until (ctreq("_A_mul_b", "0")) ( \
+        addctr("_R_mul", "_A_mul_a"), \
+        addctr("_A_mul_b", "-1") \
+    ) \
+)
+
+initctr("10", 10)
+initctr("1", 1)
+initctr("o", 1)
+
+repeat_until(ctreq("o", "10")) ( \
+    initctr("i", 1), \
+    dupctr("o", "_o"), \
+    addctr("_o", "1"), \
+    repeat_until(ctreq("i", "_o")) ( \
+        dupctr("o", "_A_mul_a"), \
+        dupctr("i", "_A_mul_b"), \
+        loadproc("mul"), \
+        append_fmt("%d x %d = %d  ", "i", "o", "_R_mul"), \
+        addctr("i", "1") \
+    ), \
+    append("\n"), \
+    addctr("o", "1") \
+)
+
