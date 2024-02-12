@@ -1,5 +1,10 @@
 use once_cell::sync::Lazy;
-use std::{collections::HashSet, fmt::Write, str::FromStr, sync::RwLock};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Write,
+    str::FromStr,
+    sync::RwLock,
+};
 
 macro_rules! procedure_trim_matcher {
     ($v:expr, $c:expr) => {
@@ -31,6 +36,18 @@ macro_rules! procedure_oneliteral_matcher {
             "mpbw" => Self::MakeParaBeginWith($p),
             "addflag" => Self::AddFlag($p),
             "delflag" => Self::DelFlag($p),
+            "loadproc" => Self::LoadProc($p),
+            _ => unreachable!(),
+        }
+    };
+}
+
+macro_rules! procedure_twoliteral_matcher {
+    ($v:expr, $a:expr, $b:expr) => {
+        match $v {
+            "replace" => Self::Replace($a, $b),
+            "add" => Self::AddCounter($a, $b),
+            "dup" => Self::DupCounter($a, $b),
             _ => unreachable!(),
         }
     };
@@ -41,6 +58,15 @@ macro_rules! condition_allany_matcher {
         match $v {
             "all" => Self::All(Box::new($a), Box::new($b)),
             "any" => Self::Any(Box::new($a), Box::new($b)),
+            _ => unreachable!(),
+        }
+    };
+}
+
+macro_rules! condition_ctrcmp_matcher {
+    ($v:expr, $a:expr, $b:expr) => {
+        match $v {
+            "eq" => Self::CounterEq($a, $b),
             _ => unreachable!(),
         }
     };
@@ -58,6 +84,8 @@ macro_rules! condition_oneliteral_matcher {
 }
 
 static FLAGS: Lazy<RwLock<HashSet<String>>> = Lazy::new(RwLock::default);
+static STORED_PROCEDURES: Lazy<RwLock<HashMap<String, Procedure>>> = Lazy::new(RwLock::default);
+static COUNTERS: Lazy<RwLock<HashMap<String, i32>>> = Lazy::new(RwLock::default);
 
 #[derive(Debug, Clone)]
 pub enum Procedure {
@@ -70,12 +98,19 @@ pub enum Procedure {
     TrimEnd(Option<String>),
     Append(String),
     AppendLine(String),
+    AppendFmt(Vec<String>),
     RepeatN(u32, Box<Procedure>),
     RepeatUntil(Condition, Box<Procedure>),
     If(Condition, Box<Procedure>),
     AddFlag(String),
     DelFlag(String),
     EachLine(Box<Procedure>),
+    Lambda(Vec<Procedure>),
+    StoreProc(String, Box<Procedure>),
+    LoadProc(String),
+    InitCounter(String, i32),
+    AddCounter(String, String),
+    DupCounter(String, String),
 }
 impl Procedure {
     pub fn run(&self, s: String) -> String {
@@ -90,6 +125,7 @@ impl Procedure {
             Self::RepeatN(n, p) => Self::repeatn(*n, p, s),
             Self::Append(p) => crate::tools::append(s, p),
             Self::AppendLine(p) => crate::tools::append_line(s, p),
+            Self::AppendFmt(p) => Self::append_fmt(s, p),
             Self::RepeatUntil(cond, p) => Self::repeat_until(cond, p, s),
             Self::If(cond, p) => Self::if_do(cond, p, s),
             Self::AddFlag(flag) => {
@@ -101,7 +137,76 @@ impl Procedure {
                 s
             }
             Self::EachLine(p) => Self::each_line(p, s),
+            Self::Lambda(procs) => Self::lambda(procs, s),
+            Self::StoreProc(name, proc) => {
+                store_procedure(name.clone(), *proc.clone());
+                s
+            }
+            Self::LoadProc(name) => Self::load_procedure(name, s),
+            Self::InitCounter(name, val) => {
+                init_counter(name.clone(), *val);
+                s
+            }
+            Self::AddCounter(a, b) => Self::add_counter(a, b, s),
+            Self::DupCounter(a, b) => Self::dup_counter(a, b, s),
         }
+    }
+
+    fn add_counter(a: &str, b: &str, s: String) -> String {
+        let a_val = counter(a).unwrap_or_default();
+        let b_val = counter(b).unwrap_or_default();
+        init_counter(a.into(), a_val + b_val);
+        s
+    }
+
+    fn dup_counter(a: &str, b: &str, s: String) -> String {
+        init_counter(b.into(), counter(a).unwrap_or_default());
+        s
+    }
+
+    fn append_fmt(mut s: String, p: &[String]) -> String {
+        let mut iter = p.iter().map(|x| x.as_str());
+        let Some(fmt) = iter.next() else {
+            return s;
+        };
+        let to = fmt.as_bytes().iter().copied().fold(
+            Vec::with_capacity(fmt.len() + 32),
+            |mut acc, c| {
+                if let Some(b'%') = acc.last() {
+                    acc.pop();
+                    match c {
+                        b'%' => acc.push(b'%'),
+                        b'd' => acc.append(
+                            &mut counter(iter.next().unwrap_or("bad"))
+                                .unwrap_or_default()
+                                .to_string()
+                                .into_bytes(),
+                        ),
+                        _ => acc.push(b'?'),
+                    }
+                } else {
+                    acc.push(c);
+                }
+                acc
+            },
+        );
+        s.push_str(&String::from_utf8_lossy(&to));
+
+        s
+    }
+
+    fn load_procedure(name: &str, s: String) -> String {
+        match load_procedure(name) {
+            Some(proc) => proc.run(s),
+            None => s,
+        }
+    }
+
+    fn lambda(procs: &[Procedure], mut s: String) -> String {
+        for p in procs {
+            s = p.run(s);
+        }
+        s
     }
 
     fn repeatn(n: u32, p: &Self, mut s: String) -> String {
@@ -137,7 +242,7 @@ impl Procedure {
     fn parse_tokens(tokens: &[Token]) -> Result<Self, Error> {
         if let Some(Token::Ident(ident)) = tokens.first() {
             match &ident[..] {
-                "replace" => Self::try_parse_replace(&tokens[1..]),
+                "replace" => Self::try_parse_twoliteral("replace", &tokens[1..]),
                 "unsplit_lines" => Self::try_parse_unsplit_lines(&tokens[1..]),
                 "on_para_begin" => Self::try_parse_oneliteral("opb", &tokens[1..]),
                 "make_para_begin_with" => Self::try_parse_oneliteral("mpbw", &tokens[1..]),
@@ -148,10 +253,17 @@ impl Procedure {
                 "repeat_until" => Self::try_parse_ifuntil("until", &tokens[1..]),
                 "append" => Self::try_parse_oneliteral("append", &tokens[1..]),
                 "append_line" => Self::try_parse_oneliteral("appendline", &tokens[1..]),
+                "append_fmt" => Self::try_parse_append_fmt(&tokens[1..]),
                 "if" => Self::try_parse_ifuntil("if", &tokens[1..]),
                 "addflag" => Self::try_parse_oneliteral("addflag", &tokens[1..]),
                 "delflag" => Self::try_parse_oneliteral("delflag", &tokens[1..]),
                 "each_line" => Self::try_parse_each_line(&tokens[1..]),
+                "lambda" => Self::try_parse_lambda(&tokens[1..]),
+                "storeproc" => Self::try_parse_storeproc(&tokens[1..]),
+                "loadproc" => Self::try_parse_oneliteral("loadproc", &tokens[1..]),
+                "initctr" => Self::try_parse_init_counter(&tokens[1..]),
+                "addctr" => Self::try_parse_twoliteral("add", &tokens[1..]),
+                "dupctr" => Self::try_parse_twoliteral("dup", &tokens[1..]),
                 _ => Err(Error::FnNotFound(ident.clone())),
             }
         } else {
@@ -159,7 +271,7 @@ impl Procedure {
         }
     }
 
-    fn try_parse_replace(tokens: &[Token]) -> Result<Self, Error> {
+    fn try_parse_twoliteral(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
         let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
         let right_paren = matches!(tokens.get(4), Some(Token::RightParen));
         let comma = matches!(tokens.get(2), Some(Token::Comma));
@@ -174,7 +286,7 @@ impl Procedure {
             return Err(Error::Expected("literal", tokens.get(3).cloned()));
         };
 
-        Ok(Self::Replace(from.clone(), to.clone()))
+        Ok(procedure_twoliteral_matcher!(var, from.clone(), to.clone()))
     }
 
     fn try_parse_unsplit_lines(tokens: &[Token]) -> Result<Self, Error> {
@@ -264,6 +376,76 @@ impl Procedure {
         let proc = Self::parse_tokens(&tokens[1..tokens.len() - 1])?;
         Ok(Self::EachLine(Box::new(proc)))
     }
+
+    fn try_parse_lambda(tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        let right_paren = matches!(tokens.last(), Some(Token::RightParen));
+        if !(left_paren && right_paren) {
+            return Err(Error::BadFunctionCall);
+        }
+        let procs_tokens = parse_argn(&tokens[1..tokens.len() - 1]);
+        let mut procs = Vec::with_capacity(procs_tokens.len());
+        for tok in procs_tokens {
+            let proc = Self::parse_tokens(tok)?;
+            procs.push(proc);
+        }
+        Ok(Self::Lambda(procs))
+    }
+
+    fn try_parse_storeproc(tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        let right_paren = matches!(tokens.last(), Some(Token::RightParen));
+        let comma = matches!(tokens.get(2), Some(Token::Comma));
+        if !(left_paren && right_paren && comma) {
+            return Err(Error::BadFunctionCall);
+        }
+        let Some(Token::Literal(name)) = tokens.get(1) else {
+            return Err(Error::Expected("literal", tokens.get(1).cloned()));
+        };
+        let p = Self::parse_tokens(&tokens[3..tokens.len() - 1])?;
+        Ok(Self::StoreProc(name.clone(), Box::new(p)))
+    }
+
+    fn try_parse_init_counter(tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        let right_paren = matches!(tokens.get(4), Some(Token::RightParen));
+        let comma = matches!(tokens.get(2), Some(Token::Comma));
+        let valid_len = tokens.len() == 5;
+        if !(left_paren && right_paren && comma && valid_len) {
+            return Err(Error::BadFunctionCall);
+        }
+        let Some(Token::Literal(name)) = tokens.get(1) else {
+            return Err(Error::Expected("literal", tokens.get(1).cloned()));
+        };
+        let Some(Token::Ident(val)) = tokens.get(3) else {
+            return Err(Error::Expected("ident", tokens.get(3).cloned()));
+        };
+        let Ok(val) = val.parse::<i32>() else {
+            return Err(Error::Expected("number", Some(Token::Ident(val.clone()))));
+        };
+
+        Ok(Self::InitCounter(name.clone(), val))
+    }
+
+    fn try_parse_append_fmt(tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        let right_paren = matches!(tokens.last(), Some(Token::RightParen));
+        if !(left_paren && right_paren) {
+            return Err(Error::BadFunctionCall);
+        }
+        let strs_tokens = parse_argn(&tokens[1..tokens.len() - 1]);
+        let mut strs = Vec::with_capacity(strs_tokens.len());
+        for tok in strs_tokens {
+            if tok.len() != 1 {
+                return Err(Error::BadFunctionCall);
+            }
+            let Some(Token::Literal(s)) = tok.first() else {
+                return Err(Error::BadFunctionCall);
+            };
+            strs.push(s.clone());
+        }
+        Ok(Self::AppendFmt(strs))
+    }
 }
 impl FromStr for Procedure {
     type Err = Error;
@@ -277,8 +459,20 @@ impl FromStr for Procedure {
 pub fn parse(s: &str) -> Result<Vec<Procedure>, Error> {
     let mut procedures = Vec::with_capacity(s.len() / 8);
 
+    let s =
+        s.lines()
+            .map(|line| line.trim())
+            .fold(String::with_capacity(s.len()), |mut acc, line| {
+                if line.as_bytes().last().copied() == Some(b'\\') {
+                    write!(&mut acc, "{}", &line[..line.len() - 1]).unwrap();
+                } else {
+                    writeln!(&mut acc, "{line}").unwrap();
+                }
+                acc
+            });
+
     for l in s.lines() {
-        if l.starts_with("//") || l.trim().is_empty() {
+        if l.starts_with("//") || l.is_empty() {
             continue;
         }
         procedures.push(l.parse()?);
@@ -297,6 +491,7 @@ pub enum Condition {
     True,
     False,
     Flag(String),
+    CounterEq(String, String),
 }
 impl Condition {
     pub fn run(&self, s: &str) -> bool {
@@ -309,6 +504,9 @@ impl Condition {
             Self::True => true,
             Self::False => false,
             Self::Flag(f) => flag(f),
+            Self::CounterEq(a, b) => {
+                counter(a).unwrap_or_default() == counter(b).unwrap_or_default()
+            }
         }
     }
 
@@ -323,6 +521,7 @@ impl Condition {
                 "true" => Ok(Self::True),
                 "false" => Ok(Self::False),
                 "flag" => Self::try_parse_oneliteral("flag", &tokens[1..]),
+                "ctreq" => Self::try_parse_ctrcmp("eq", &tokens[1..]),
                 _ => Err(Error::FnNotFound(ident.clone())),
             }
         } else {
@@ -362,6 +561,22 @@ impl Condition {
         let a = Self::parse_tokens(a)?;
         let b = Self::parse_tokens(b)?;
         Ok(condition_allany_matcher!(var, a, b))
+    }
+
+    fn try_parse_ctrcmp(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
+        let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
+        let right_paren = matches!(tokens.get(4), Some(Token::RightParen));
+        let comma = matches!(tokens.get(2), Some(Token::Comma));
+        if !(left_paren && right_paren && comma) {
+            return Err(Error::BadFunctionCall);
+        }
+        let Some(Token::Literal(a)) = tokens.get(1) else {
+            return Err(Error::BadFunctionCall);
+        };
+        let Some(Token::Literal(b)) = tokens.get(3) else {
+            return Err(Error::BadFunctionCall);
+        };
+        Ok(condition_ctrcmp_matcher!(var, a.clone(), b.clone()))
     }
 }
 
@@ -448,6 +663,7 @@ fn parse_arg2(tokens: &[Token]) -> Result<(&[Token], &[Token]), Error> {
             Token::Comma => {
                 if current_parens == 0 {
                     comma = Some(pos);
+                    break;
                 }
             }
             Token::LeftParen => current_parens += 1,
@@ -467,16 +683,51 @@ fn parse_arg2(tokens: &[Token]) -> Result<(&[Token], &[Token]), Error> {
     Ok((&tokens[0..comma], &tokens[comma + 1..]))
 }
 
+fn parse_argn(mut remaining: &[Token]) -> Vec<&[Token]> {
+    let mut result = Vec::with_capacity(remaining.len() / 8);
+
+    loop {
+        match parse_arg2(remaining) {
+            Ok((a, b)) => {
+                result.push(a);
+                remaining = b;
+            }
+            Err(_) => {
+                result.push(remaining);
+                break;
+            }
+        }
+    }
+
+    result
+}
+
+fn store_procedure(name: String, proc: Procedure) {
+    STORED_PROCEDURES.write().unwrap().insert(name, proc);
+}
+
+fn load_procedure(name: &str) -> Option<Procedure> {
+    STORED_PROCEDURES.read().unwrap().get(name).cloned()
+}
+
 pub fn addflag(s: String) {
     FLAGS.write().unwrap().insert(s);
 }
 
-pub fn delflag(s: &str) {
+fn delflag(s: &str) {
     FLAGS.write().unwrap().remove(s);
 }
 
 fn flag(s: &str) -> bool {
     FLAGS.read().unwrap().contains(s)
+}
+
+fn init_counter(name: String, val: i32) {
+    COUNTERS.write().unwrap().insert(name, val);
+}
+
+fn counter(name: &str) -> Option<i32> {
+    COUNTERS.read().unwrap().get(name).copied()
 }
 
 #[derive(Debug, thiserror::Error)]
