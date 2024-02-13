@@ -5,7 +5,7 @@
 // Input counters are counters: "_A_mul_a" and "_A_mul_b".
 // The calculated result will be stored to the counter, "_R_mul".
 //
-// The TeXT ForMaTter does not support multiply yet, so we manually implemented the
+// The TXT ForMaTter does not support multiply yet, so we manually implemented the
 // function. However, this will still be kept when it is supported as a builtin
 // because it can make demonstrate for the "storeproc" function.
 storeproc("mul") ( \

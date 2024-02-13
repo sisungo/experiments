@@ -716,7 +716,7 @@ fn parse_condblk(tokens: &[Token]) -> Result<(&[Token], &[Token]), Error> {
                     stop = Some(pos);
                     break;
                 }
-            },
+            }
             _ => (),
         }
     }
