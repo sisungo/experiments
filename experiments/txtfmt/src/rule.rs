@@ -27,21 +27,6 @@ macro_rules! procedure_ifuntil_matcher {
     };
 }
 
-macro_rules! procedure_oneliteral_matcher {
-    ($v:expr, $p:expr) => {
-        match $v {
-            "append" => Self::Append($p),
-            "appendline" => Self::AppendLine($p),
-            "opb" => Self::OnParaBegin($p),
-            "mpbw" => Self::MakeParaBeginWith($p),
-            "addflag" => Self::AddFlag($p),
-            "delflag" => Self::DelFlag($p),
-            "loadproc" => Self::LoadProc($p),
-            _ => unreachable!(),
-        }
-    };
-}
-
 macro_rules! procedure_twoliteral_matcher {
     ($v:expr, $a:expr, $b:expr) => {
         match $v {
@@ -93,7 +78,7 @@ static COUNTERS: Lazy<RwLock<HashMap<String, i32>>> = Lazy::new(RwLock::default)
 pub enum Procedure {
     Replace(String, String),
     UnsplitLines,
-    OnParaBegin(String),
+    OnParaBeginFmt(Vec<String>),
     MakeParaBeginWith(String),
     Trim(Option<String>),
     TrimBegin(Option<String>),
@@ -119,7 +104,7 @@ impl Procedure {
         match self {
             Self::Replace(from, to) => crate::tools::replace(s, (from, to)),
             Self::UnsplitLines => crate::tools::unsplit_lines(s),
-            Self::OnParaBegin(content) => crate::tools::on_para_begin(s, content),
+            Self::OnParaBeginFmt(p) => crate::tools::fmt("ob", s, p),
             Self::MakeParaBeginWith(content) => crate::tools::make_para_begin_with(s, content),
             Self::Trim(mat) => crate::tools::trim(s, mat.as_deref()),
             Self::TrimBegin(mat) => crate::tools::trim_begin(s, mat.as_deref()),
@@ -127,7 +112,7 @@ impl Procedure {
             Self::RepeatN(n, p) => Self::repeatn(*n, p, s),
             Self::Append(p) => crate::tools::append(s, p),
             Self::AppendLine(p) => crate::tools::append_line(s, p),
-            Self::AppendFmt(p) => Self::append_fmt(s, p),
+            Self::AppendFmt(p) => crate::tools::fmt("append", s, p),
             Self::RepeatUntil(cond, p) => Self::repeat_until(cond, p, s),
             Self::If(cond, p) => Self::if_do(cond, p, s),
             Self::AddFlag(flag) => {
@@ -163,37 +148,6 @@ impl Procedure {
 
     fn dup_counter(a: &str, b: &str, s: String) -> String {
         init_counter(b.into(), counter(a).unwrap_or_default());
-        s
-    }
-
-    fn append_fmt(mut s: String, p: &[String]) -> String {
-        let mut iter = p.iter().map(|x| x.as_str());
-        let Some(fmt) = iter.next() else {
-            return s;
-        };
-        let to = fmt.as_bytes().iter().copied().fold(
-            Vec::with_capacity(fmt.len() + 32),
-            |mut acc, c| {
-                if let Some(b'%') = acc.last() {
-                    acc.pop();
-                    match c {
-                        b'%' => acc.push(b'%'),
-                        b'd' => acc.append(
-                            &mut counter(iter.next().unwrap_or("bad"))
-                                .unwrap_or_default()
-                                .to_string()
-                                .into_bytes(),
-                        ),
-                        _ => acc.push(b'?'),
-                    }
-                } else {
-                    acc.push(c);
-                }
-                acc
-            },
-        );
-        s.push_str(&String::from_utf8_lossy(&to));
-
         s
     }
 
@@ -246,7 +200,7 @@ impl Procedure {
             match &ident[..] {
                 "replace" => Self::try_parse_twoliteral("replace", &tokens[1..]),
                 "unsplit_lines" => Self::try_parse_unsplit_lines(&tokens[1..]),
-                "on_para_begin" => Self::try_parse_oneliteral("opb", &tokens[1..]),
+                "on_front" => Self::try_parse_fmt("opb", &tokens[1..]),
                 "make_para_begin_with" => Self::try_parse_oneliteral("mpbw", &tokens[1..]),
                 "trim" => Self::try_parse_trim("", &tokens[1..]),
                 "trim_begin" => Self::try_parse_trim("begin", &tokens[1..]),
@@ -255,7 +209,7 @@ impl Procedure {
                 "repeat_until" => Self::try_parse_ifuntil("until", &tokens[1..]),
                 "append" => Self::try_parse_oneliteral("append", &tokens[1..]),
                 "append_line" => Self::try_parse_oneliteral("appendline", &tokens[1..]),
-                "append_fmt" => Self::try_parse_append_fmt(&tokens[1..]),
+                "append_fmt" => Self::try_parse_fmt("append", &tokens[1..]),
                 "if" => Self::try_parse_ifuntil("if", &tokens[1..]),
                 "addflag" => Self::try_parse_oneliteral("addflag", &tokens[1..]),
                 "delflag" => Self::try_parse_oneliteral("delflag", &tokens[1..]),
@@ -313,7 +267,15 @@ impl Procedure {
             return Err(Error::Expected("literal", tokens.get(1).cloned()));
         };
 
-        Ok(procedure_oneliteral_matcher!(var, content.clone()))
+        Ok(match var {
+            "append" => Self::Append(content.clone()),
+            "appendline" => Self::AppendLine(content.clone()),
+            "mpbw" => Self::MakeParaBeginWith(content.clone()),
+            "addflag" => Self::AddFlag(content.clone()),
+            "delflag" => Self::DelFlag(content.clone()),
+            "loadproc" => Self::LoadProc(content.clone()),
+            _ => unreachable!(),
+        })
     }
 
     fn try_parse_trim(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
@@ -435,7 +397,7 @@ impl Procedure {
         Ok(Self::InitCounter(name.clone(), val))
     }
 
-    fn try_parse_append_fmt(tokens: &[Token]) -> Result<Self, Error> {
+    fn try_parse_fmt(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
         let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
         let right_paren = matches!(tokens.last(), Some(Token::RightParen));
         if !(left_paren && right_paren) {
@@ -452,7 +414,11 @@ impl Procedure {
             };
             strs.push(s.clone());
         }
-        Ok(Self::AppendFmt(strs))
+        Ok(match var {
+            "append" => Self::AppendFmt(strs),
+            "opb" => Self::OnParaBeginFmt(strs),
+            _ => unreachable!(),
+        })
     }
 }
 impl FromStr for Procedure {
@@ -775,7 +741,7 @@ fn init_counter(name: String, val: i32) {
     COUNTERS.write().unwrap().insert(name, val);
 }
 
-fn counter(name: &str) -> Option<i32> {
+pub fn counter(name: &str) -> Option<i32> {
     COUNTERS.read().unwrap().get(name).copied()
 }
 

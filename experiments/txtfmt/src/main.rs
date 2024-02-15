@@ -24,11 +24,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         rule::addflag(def);
     }
 
+    let rules = rule::parse(&std::fs::read_to_string(&cmdline.rule)?)?;
+
     let mut s = std::fs::read_to_string(&cmdline.file)?;
     let dos = s.contains('\r');
     s = tools::dos2unix(s);
 
-    let rules = rule::parse(&std::fs::read_to_string(&cmdline.rule)?)?;
     for rule in rules {
         s = rule.run(s);
     }
