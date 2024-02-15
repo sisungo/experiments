@@ -1,5 +1,5 @@
-use std::fmt::Write;
 use crate::rule::counter;
+use std::fmt::Write;
 
 const SENTENCE_FINALIZERS: &[char] = &['。', '.', '！', '!', '”', '’', '\'', '"', '」', '?'];
 
@@ -47,12 +47,14 @@ pub fn unsplit_lines(s: String) -> String {
 
 pub fn fmt(var: &'static str, mut s: String, p: &[String]) -> String {
     let mut iter = p.iter().map(|x| x.as_str());
-        let Some(fmt) = iter.next() else {
-            return s;
-        };
-        let to = fmt.as_bytes().iter().copied().fold(
-            Vec::with_capacity(fmt.len() + 32),
-            |mut acc, c| {
+    let Some(fmt) = iter.next() else {
+        return s;
+    };
+    let to =
+        fmt.as_bytes()
+            .iter()
+            .copied()
+            .fold(Vec::with_capacity(fmt.len() + 32), |mut acc, c| {
                 if let Some(b'%') = acc.last() {
                     acc.pop();
                     match c {
@@ -69,15 +71,14 @@ pub fn fmt(var: &'static str, mut s: String, p: &[String]) -> String {
                     acc.push(c);
                 }
                 acc
-            },
-        );
-        match var {
-            "append" => s.push_str(&String::from_utf8_lossy(&to)),
-            "ob" => s = format!("{}{}", String::from_utf8_lossy(&to), s),
-            _ => unreachable!(),
-        }
+            });
+    match var {
+        "append" => s.push_str(&String::from_utf8_lossy(&to)),
+        "ob" => s = format!("{}{}", String::from_utf8_lossy(&to), s),
+        _ => unreachable!(),
+    }
 
-        s
+    s
 }
 
 pub fn make_para_begin_with(s: String, param: &str) -> String {
