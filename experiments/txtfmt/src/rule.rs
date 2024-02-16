@@ -17,59 +17,6 @@ macro_rules! procedure_trim_matcher {
     };
 }
 
-macro_rules! procedure_ifuntil_matcher {
-    ($v:expr, $a:expr, $b:expr) => {
-        match $v {
-            "if" => Self::If($a, $b),
-            "until" => Self::RepeatUntil($a, $b),
-            _ => unreachable!(),
-        }
-    };
-}
-
-macro_rules! procedure_twoliteral_matcher {
-    ($v:expr, $a:expr, $b:expr) => {
-        match $v {
-            "replace" => Self::Replace($a, $b),
-            "add" => Self::AddCounter($a, $b),
-            "dup" => Self::DupCounter($a, $b),
-            _ => unreachable!(),
-        }
-    };
-}
-
-macro_rules! condition_allany_matcher {
-    ($v:expr, $a:expr, $b:expr) => {
-        match $v {
-            "all" => Self::All(Box::new($a), Box::new($b)),
-            "any" => Self::Any(Box::new($a), Box::new($b)),
-            _ => unreachable!(),
-        }
-    };
-}
-
-macro_rules! condition_ctrcmp_matcher {
-    ($v:expr, $a:expr, $b:expr) => {
-        match $v {
-            "eq" => Self::CounterEq($a, $b),
-            "lt" => Self::CounterLt($a, $b),
-            "mt" => Self::CounterMt($a, $b),
-            _ => unreachable!(),
-        }
-    };
-}
-
-macro_rules! condition_oneliteral_matcher {
-    ($v:expr, $p:expr) => {
-        match $v {
-            "contains" => Self::Contains($p),
-            "content_eq" => Self::ContentEq($p),
-            "flag" => Self::Flag($p),
-            _ => unreachable!(),
-        }
-    };
-}
-
 static FLAGS: Lazy<RwLock<HashSet<String>>> = Lazy::new(RwLock::default);
 static STORED_PROCEDURES: Lazy<RwLock<HashMap<String, Procedure>>> = Lazy::new(RwLock::default);
 static COUNTERS: Lazy<RwLock<HashMap<String, i32>>> = Lazy::new(RwLock::default);
@@ -242,7 +189,12 @@ impl Procedure {
             return Err(Error::Expected("literal", tokens.get(3).cloned()));
         };
 
-        Ok(procedure_twoliteral_matcher!(var, from.clone(), to.clone()))
+        Ok(match var {
+            "replace" => Self::Replace(from.clone(), to.clone()),
+            "add" => Self::AddCounter(from.clone(), to.clone()),
+            "dup" => Self::DupCounter(from.clone(), to.clone()),
+            _ => unreachable!(),
+        })
     }
 
     fn try_parse_unsplit_lines(tokens: &[Token]) -> Result<Self, Error> {
@@ -330,9 +282,13 @@ impl Procedure {
         }
         let mut body = body.to_vec();
         body.insert(0, Token::Ident("lambda".into()));
-        let proc = Self::parse_tokens(&body)?;
+        let proc = Box::new(Self::parse_tokens(&body)?);
         let cond = Condition::parse_tokens(cond)?;
-        Ok(procedure_ifuntil_matcher!(var, cond, Box::new(proc)))
+        Ok(match var {
+            "if" => Self::If(cond, proc),
+            "until" => Self::RepeatUntil(cond, proc),
+            _ => unreachable!(),
+        })
     }
 
     fn try_parse_each_line(tokens: &[Token]) -> Result<Self, Error> {
@@ -532,7 +488,12 @@ impl Condition {
         let Some(Token::Literal(pat)) = tokens.get(1) else {
             return Err(Error::Expected("literal", tokens.get(1).cloned()));
         };
-        Ok(condition_oneliteral_matcher!(var, pat.clone()))
+        Ok(match var {
+            "contains" => Self::Contains(pat.clone()),
+            "content_eq" => Self::ContentEq(pat.clone()),
+            "flag" => Self::Flag(pat.clone()),
+            _ => unreachable!(),
+        })
     }
 
     fn try_parse_allany(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
@@ -542,9 +503,13 @@ impl Condition {
             return Err(Error::BadFunctionCall);
         }
         let (a, b) = parse_arg2(&tokens[1..tokens.len() - 1])?;
-        let a = Self::parse_tokens(a)?;
-        let b = Self::parse_tokens(b)?;
-        Ok(condition_allany_matcher!(var, a, b))
+        let a = Box::new(Self::parse_tokens(a)?);
+        let b = Box::new(Self::parse_tokens(b)?);
+        Ok(match var {
+            "all" => Self::All(a, b),
+            "any" => Self::Any(a, b),
+            _ => unreachable!(),
+        })
     }
 
     fn try_parse_ctrcmp(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
@@ -560,7 +525,12 @@ impl Condition {
         let Some(Token::Literal(b)) = tokens.get(3) else {
             return Err(Error::BadFunctionCall);
         };
-        Ok(condition_ctrcmp_matcher!(var, a.clone(), b.clone()))
+        Ok(match var {
+            "eq" => Self::CounterEq(a.clone(), b.clone()),
+            "lt" => Self::CounterLt(a.clone(), b.clone()),
+            "mt" => Self::CounterMt(a.clone(), b.clone()),
+            _ => unreachable!(),
+        })
     }
 }
 
