@@ -2,6 +2,7 @@ use once_cell::sync::Lazy;
 use std::{
     collections::{HashMap, HashSet},
     fmt::Write,
+    path::Path,
     str::FromStr,
     sync::RwLock,
 };
@@ -386,7 +387,8 @@ impl FromStr for Procedure {
     }
 }
 
-pub fn parse(s: &str) -> Result<Vec<Procedure>, Error> {
+pub fn parse(path: &Path) -> Result<Vec<Procedure>, Error> {
+    let s = std::fs::read_to_string(path).map_err(|_| Error::Io)?;
     let mut procedures = Vec::with_capacity(s.len() / 8);
 
     let s =
@@ -403,6 +405,14 @@ pub fn parse(s: &str) -> Result<Vec<Procedure>, Error> {
 
     for l in s.lines() {
         if l.starts_with("//") || l.is_empty() {
+            continue;
+        }
+        if let Some(x) = l.strip_prefix("#include :: ") {
+            let mut path = path.to_path_buf();
+            path.pop();
+            let path = path.join(x);
+            let mut procs = parse(&path).map_err(|_| Error::BadInclude)?;
+            procedures.append(&mut procs);
             continue;
         }
         procedures.push(l.parse()?);
@@ -734,4 +744,10 @@ pub enum Error {
 
     #[error("bad function call")]
     BadFunctionCall,
+
+    #[error("bad include")]
+    BadInclude,
+
+    #[error("I/O Error")]
+    Io,
 }

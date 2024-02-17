@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         rule::addflag(def);
     }
 
-    let rules = rule::parse(&std::fs::read_to_string(&cmdline.rule)?)?;
+    let rules = rule::parse(&cmdline.rule)?;
 
     let mut s = std::fs::read_to_string(&cmdline.file)?;
     let dos = s.contains('\r');

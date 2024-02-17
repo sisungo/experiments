@@ -12,7 +12,7 @@ storeproc("mul") ( \
     initctr("0", 0), \
     initctr("-1", -1), \
     initctr("_R_mul", 0), \
-    repeat_until (ctreq("_A_mul_b", "0")) ( \
+    repeat_until(ctreq("_A_mul_b", "0")) ( \
         addctr("_R_mul", "_A_mul_a"), \
         addctr("_A_mul_b", "-1") \
     ) \
@@ -36,4 +36,3 @@ repeat_until(ctreq("o", "10")) ( \
     append("\n"), \
     addctr("o", "1") \
 )
-
