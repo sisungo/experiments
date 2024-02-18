@@ -1,4 +1,5 @@
 use once_cell::sync::Lazy;
+use rayon::{iter::ParallelIterator, str::ParallelString};
 use std::{
     collections::{HashMap, HashSet},
     fmt::Write,
@@ -40,6 +41,7 @@ pub enum Procedure {
     AddFlag(String),
     DelFlag(String),
     EachLine(Box<Procedure>),
+    ParEachLine(Box<Procedure>),
     Lambda(Vec<Procedure>),
     StoreProc(String, Box<Procedure>),
     LoadProc(String),
@@ -72,6 +74,7 @@ impl Procedure {
                 s
             }
             Self::EachLine(p) => Self::each_line(p, s),
+            Self::ParEachLine(p) => Self::par_each_line(p, s),
             Self::Lambda(procs) => Self::lambda(procs, s),
             Self::StoreProc(name, proc) => {
                 store_procedure(name.clone(), *proc.clone());
@@ -136,6 +139,19 @@ impl Procedure {
             })
     }
 
+    fn par_each_line(p: &Self, s: String) -> String {
+        s.par_lines()
+            .map(|x| x.to_owned())
+            .reduce(
+                || String::with_capacity(s.len()),
+                |mut acc, line| {
+                    writeln!(&mut acc, "{}", p.run(line.to_owned())).unwrap();
+                    acc
+                },
+            )
+            .to_string()
+    }
+
     fn repeat_until(cond: &Condition, p: &Self, mut s: String) -> String {
         while !cond.run(&s) {
             s = p.run(s);
@@ -161,7 +177,8 @@ impl Procedure {
                 "if" => Self::try_parse_ifuntil("if", &tokens[1..]),
                 "addflag" => Self::try_parse_oneliteral("addflag", &tokens[1..]),
                 "delflag" => Self::try_parse_oneliteral("delflag", &tokens[1..]),
-                "each_line" => Self::try_parse_each_line(&tokens[1..]),
+                "each_line" => Self::try_parse_each_line("", &tokens[1..]),
+                "par_each_line" => Self::try_parse_each_line("par", &tokens[1..]),
                 "lambda" => Self::try_parse_lambda(&tokens[1..]),
                 "storeproc" => Self::try_parse_storeproc(&tokens[1..]),
                 "loadproc" => Self::try_parse_oneliteral("loadproc", &tokens[1..]),
@@ -292,14 +309,18 @@ impl Procedure {
         })
     }
 
-    fn try_parse_each_line(tokens: &[Token]) -> Result<Self, Error> {
+    fn try_parse_each_line(var: &'static str, tokens: &[Token]) -> Result<Self, Error> {
         let left_paren = matches!(tokens.first(), Some(Token::LeftParen));
         let right_paren = matches!(tokens.last(), Some(Token::RightParen));
         if !(left_paren && right_paren) {
             return Err(Error::BadFunctionCall);
         }
         let proc = Self::parse_tokens(&tokens[1..tokens.len() - 1])?;
-        Ok(Self::EachLine(Box::new(proc)))
+        Ok(match var {
+            "" => Self::EachLine(Box::new(proc)),
+            "par" => Self::ParEachLine(Box::new(proc)),
+            _ => unreachable!(),
+        })
     }
 
     fn try_parse_lambda(tokens: &[Token]) -> Result<Self, Error> {
