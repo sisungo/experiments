@@ -1,4 +1,4 @@
-include!("rust_common.rs");
+include!("shared/rust_common.h.rs");
 
 use std::path::{Path, PathBuf};
 

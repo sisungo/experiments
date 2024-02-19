@@ -1,5 +1,8 @@
 Experiments in this repository may use various licenses. For details, please enter the experiment directory
 to learn more.
 
-Files in this repository that does not belong to any experiment, for example, `README.md`, is licensed under
+Miscellaneous scripts, cum files in `misc` directory, is licensed under The Unlicense unless another license is
+chosen in header of the file. For the content of The Unlicense, view [https://unlicense.org].
+
+Files in this repository that does not have an explicit copyright declaration, for example, `README.md`, is licensed under
 the `CC-BY-SA 4.0` license. 
