@@ -31,6 +31,7 @@ fn main() -> Result<(), StdError> {
     let origin_input_path = std::env::args()
         .nth(1)
         .ok_or_else(|| -> StdError { Box::from("no input file") })?;
+    let origin_input_path = std::fs::canonicalize(origin_input_path)?;
 
     // Ensure an empty `MUSIC_CONVERT_WORK_DIR` exists.
     std::fs::remove_dir_all(MUSIC_CONVERT_WORK_DIR).ok();
@@ -53,13 +54,7 @@ fn main() -> Result<(), StdError> {
     let album = ask("Album: ")?;
     let artist = ask("Artist: ")?;
     let cover_path = ask("Path of \"Cover (front)\" image (`null` if not existent): ")?;
-    let bitrate = loop {
-        let bitrate = ask("Bitrate: ")?;
-        if !VALID_BITRATES.contains(&&bitrate[..]) {
-            continue;
-        }
-        break bitrate;
-    };
+    let bitrate = ask_until("Bitrate: ", |x| VALID_BITRATES.contains(&x))?;
 
     // Process something
     let cover_path = match &cover_path[..] {

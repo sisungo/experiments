@@ -57,3 +57,13 @@ fn ask(hint: &str) -> std::io::Result<String> {
         };
     }
 }
+
+#[allow(unused)]
+fn ask_until<F: FnMut(&str) -> bool>(hint: &str, mut validator: F) -> std::io::Result<String> {
+    loop {
+        let asked = ask(hint)?;
+        if validator(&asked) {
+            break Ok(asked);
+        }
+    }
+}
