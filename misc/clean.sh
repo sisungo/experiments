@@ -1,23 +1,29 @@
 #!/bin/sh
 
+# Functions
+function clean_rust_projects() {
+    for i in $@; do
+        cd $i
+        rm -rf target/ Cargo.lock
+        cd ../
+    done
+}
+
 # Navigate to `/`
 cd $(dirname $0)
 cd ../
 
 # Navigate to `/misc`
 cd misc
-rm music_convert
+rm -f music_convert
 cd ../
 
 # Navigate to `/experiments`
 cd experiments
-
-cd randvoca
-rm -r target/ Cargo.lock
+clean_rust_projects txtfmt
 cd ../
 
-cd txtfmt
-rm -r target/ Cargo.lock
-cd ../
-
+# Navigate to `/archive`
+cd archive
+clean_rust_projects randvoca
 cd ../
