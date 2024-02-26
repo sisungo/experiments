@@ -669,9 +669,9 @@ fn parse_arg2(tokens: &[Token]) -> Result<(&[Token], &[Token]), Error> {
 }
 
 fn parse_condblk(tokens: &[Token]) -> Result<(&[Token], &[Token]), Error> {
-    // Input: (do_b()) { ... }
+    // Input: (do_b()) ( ... )
     // Output I: do_b()
-    // Output II: { ... }
+    // Output II: ( ... )
     let mut current_parens = 0;
     let mut stop = None;
     for (pos, token) in tokens.iter().enumerate() {

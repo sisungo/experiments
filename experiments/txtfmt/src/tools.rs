@@ -72,7 +72,7 @@ pub fn fmt(var: &'static str, mut s: String, p: &[String]) -> String {
                 }
                 acc
             });
-            
+
     match var {
         "append" => s.push_str(&String::from_utf8_lossy(&to)),
         "ob" => s = format!("{}{}", String::from_utf8_lossy(&to), s),
