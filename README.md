@@ -2,8 +2,6 @@
 This repository stores my projects that are currently in experimental stage, or little scripts that are used for once.
 
 ## List of Active Experiments
- - [`LumenInterface`](experiments/LumenInterface): A specification for a certain kind of operating system architecture and 
- interface.
  - [`txtfmt`](experiments/txtfmt): A simple formatter for plain text.
 
 ## List of Past Experiments
