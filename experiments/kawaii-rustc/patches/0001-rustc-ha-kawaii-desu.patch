@@ -1,0 +1,1352 @@
+From 9f8107f8dc07541f4cd2222d6ccc539f99000cf1 Mon Sep 17 00:00:00 2001
+From: sisungo <sisungo@icloud.com>
+Date: Thu, 29 Feb 2024 16:43:17 +0800
+Subject: [PATCH] rustc ha kawaii desu!!!
+
+---
+ compiler/rustc_ast_passes/messages.ftl       | 184 +++++++++----------
+ compiler/rustc_attr/messages.ftl             |  18 +-
+ compiler/rustc_borrowck/messages.ftl         |  30 +--
+ compiler/rustc_builtin_macros/messages.ftl   |   4 +-
+ compiler/rustc_codegen_llvm/messages.ftl     |   4 +-
+ compiler/rustc_const_eval/messages.ftl       |   4 +-
+ compiler/rustc_driver_impl/messages.ftl      |  26 +--
+ compiler/rustc_errors/messages.ftl           |   4 +-
+ compiler/rustc_errors/src/lib.rs             |  37 ++--
+ compiler/rustc_expand/messages.ftl           |   2 +-
+ compiler/rustc_hir_analysis/messages.ftl     |   8 +-
+ compiler/rustc_hir_typeck/messages.ftl       |   2 +-
+ compiler/rustc_incremental/messages.ftl      |   2 +-
+ compiler/rustc_infer/messages.ftl            |   6 +-
+ compiler/rustc_interface/messages.ftl        |   4 +-
+ compiler/rustc_lint/messages.ftl             |   2 +-
+ compiler/rustc_metadata/messages.ftl         |  12 +-
+ compiler/rustc_middle/messages.ftl           |   6 +-
+ compiler/rustc_mir_build/messages.ftl        |  16 +-
+ compiler/rustc_mir_dataflow/messages.ftl     |   2 +-
+ compiler/rustc_mir_transform/messages.ftl    |  14 +-
+ compiler/rustc_monomorphize/messages.ftl     |   4 +-
+ compiler/rustc_parse/messages.ftl            |  36 ++--
+ compiler/rustc_passes/messages.ftl           |  38 ++--
+ compiler/rustc_pattern_analysis/messages.ftl |   2 +-
+ compiler/rustc_privacy/messages.ftl          |   8 +-
+ compiler/rustc_query_system/messages.ftl     |   2 +-
+ compiler/rustc_resolve/messages.ftl          |   8 +-
+ compiler/rustc_session/messages.ftl          |   4 +-
+ compiler/rustc_trait_selection/messages.ftl  |   2 +-
+ compiler/rustc_ty_utils/messages.ftl         |  12 +-
+ 31 files changed, 253 insertions(+), 250 deletions(-)
+
+diff --git a/compiler/rustc_ast_passes/messages.ftl b/compiler/rustc_ast_passes/messages.ftl
+index 790b5831..75266a02 100644
+--- a/compiler/rustc_ast_passes/messages.ftl
++++ b/compiler/rustc_ast_passes/messages.ftl
+@@ -1,76 +1,76 @@
+ ast_passes_anon_struct_or_union_not_allowed =
+-    anonymous {$struct_or_union}s are not allowed outside of unnamed struct or union fields
+-    .label = anonymous {$struct_or_union} declared here
++    {$struct_or_union} 连名字都不配有可真失败呢～
++    .label = 此处定义的匿名 {$struct_or_union}
+ 
+ ast_passes_assoc_const_without_body =
+-    associated constant in `impl` without body
+-    .suggestion = provide a definition for the constant
++    `impl` 中的关联常量没有常量体，请加上它并对它道歉！
++    .suggestion = 为该常量提供定义
+ 
+ ast_passes_assoc_fn_without_body =
+-    associated function in `impl` without body
+-    .suggestion = provide a definition for the function
++    `impl` 中的关联函数没有函数体，请加上它并对它道歉！
++    .suggestion = 为该函数提供定义
+ 
+ ast_passes_assoc_type_without_body =
+-    associated type in `impl` without body
+-    .suggestion = provide a definition for the type
++    `impl` 中的关联类型没有类型体，请加上它并对它道歉！
++    .suggestion = 为该类型提供定义
+ 
+-ast_passes_at_least_one_trait = at least one trait must be specified
++ast_passes_at_least_one_trait = 必须指定至少一个 trait，请加上它并对它道歉！
+ 
+-ast_passes_auto_generic = auto traits cannot have generic parameters
+-    .label = auto trait cannot have generic parameters
+-    .suggestion = remove the parameters
++ast_passes_auto_generic = 自动 trait 不能有泛型参数
++    .label = 自动 trait 不能有泛型参数
++    .suggestion = 删除泛型参数
+ 
+-ast_passes_auto_items = auto traits cannot have associated items
++ast_passes_auto_items = 自动 trait 不能有关联项
+     .label = {ast_passes_auto_items}
+-    .suggestion = remove these associated items
++    .suggestion = 删除关联项
+ 
+-ast_passes_auto_super_lifetime = auto traits cannot have super traits or lifetime bounds
++ast_passes_auto_super_lifetime = 自动 trait 不能有超级 trait 或生命周期边界
+     .label = {ast_passes_auto_super_lifetime}
+-    .suggestion = remove the super traits or lifetime bounds
++    .suggestion = 删除超级 trait 或生命周期标注
+ 
+-ast_passes_bad_c_variadic = only foreign or `unsafe extern "C"` functions may be C-variadic
++ast_passes_bad_c_variadic = 只有外部的或 `unsafe extern "C"` 的函数可以具有 C 风格的可变参数
+ 
+-ast_passes_body_in_extern = incorrect `{$kind}` inside `extern` block
+-    .cannot_have = cannot have a body
+-    .invalid = the invalid body
+-    .existing = `extern` blocks define existing foreign {$kind}s and {$kind}s inside of them cannot have a body
++ast_passes_body_in_extern = 在 `extern` 块中不正确的 `{$kind}`
++    .cannot_have = 不能有一个体
++    .invalid = 非法体
++    .existing = `extern` 块为已存在的外部 {$kind} 提供定义，并且其中的 {$kind} 不能有体
+ 
+-ast_passes_bound_in_context = bounds on `type`s in {$ctx} have no effect
++ast_passes_bound_in_context = {$ctx} 中 `type` 上的边界没有效果
+ 
+-ast_passes_const_and_async = functions cannot be both `const` and `async`
+-    .const = `const` because of this
+-    .async = `async` because of this
++ast_passes_const_and_async = `const async fn` 什么的... 绝... 绝对不可以！！！ 
++    .const = 呐，`const` 喵
++    .async = 呐，`async` 喵
+     .label = {""}
+ 
+-ast_passes_const_and_c_variadic = functions cannot be both `const` and C-variadic
+-    .const = `const` because of this
+-    .variadic = C-variadic because of this
++ast_passes_const_and_c_variadic = 函数不能同时具有 `const` 和 C 风格的可变参数
++    .const = `const` 是因为
++    .variadic = 具有 C 风格的可变参数是因为
+ 
+ ast_passes_const_without_body =
+-    free constant item without body
+-    .suggestion = provide a definition for the constant
++    常量体？哪里？没有啊喂！！！
++    .suggestion = 为常量提供定义
+ 
+ ast_passes_constraint_on_negative_bound =
+-    associated type constraints not allowed on negative bounds
++    否定边界不允许关联类型限制
+ 
+ ast_passes_deprecated_where_clause_location =
+-    where clause not allowed here
++    `where` 子句不是哪里都可以用的啊喂！
+ 
+-ast_passes_equality_in_where = equality constraints are not yet supported in `where` clauses
+-    .label = not supported
+-    .suggestion = if `{$ident}` is an associated type you're trying to set, use the associated type binding syntax
++ast_passes_equality_in_where = `where` 子句暂不支持相等关系限制
++    .label = 暂不支持
++    .suggestion = 如果`{$ident}` 是你正在尝试设置的关联类型，使用关联类型绑定语法
+     .suggestion_path = if `{$trait_segment}::{$potential_assoc}` is an associated type you're trying to set, use the associated type binding syntax
+     .note = see issue #20041 <https://github.com/rust-lang/rust/issues/20041> for more information
+ 
+-ast_passes_extern_block_suggestion = if you meant to declare an externally defined function, use an `extern` block
++ast_passes_extern_block_suggestion = 如果你的意思是声明外部定义的函数，请使用 `extern` 块
+ 
+-ast_passes_extern_fn_qualifiers = functions in `extern` blocks cannot have qualifiers
+-    .label = in this `extern` block
+-    .suggestion = remove the qualifiers
++ast_passes_extern_fn_qualifiers = 不能修饰 `extern` 块中的函数
++    .label = 在这个 `extern` 块中
++    .suggestion = 删除修饰词
+ 
+-ast_passes_extern_item_ascii = items in `extern` blocks cannot use non-ascii identifiers
+-    .label = in this `extern` block
+-    .note = this limitation may be lifted in the future; see issue #83942 <https://github.com/rust-lang/rust/issues/83942> for more information
++ast_passes_extern_item_ascii = `extern` 块中的项不能使用非 ASCII 标识符
++    .label = 在这个 `extern` 块中
++    .note = 这个限制在未来可能被去除；see issue #83942 <https://github.com/rust-lang/rust/issues/83942> for more information
+ 
+ ast_passes_extern_keyword_link = for more information, visit https://doc.rust-lang.org/std/keyword.extern.html
+ 
+@@ -78,54 +78,54 @@ ast_passes_extern_types_cannot = `type`s inside `extern` blocks cannot have {$de
+     .suggestion = remove the {$remove_descr}
+     .label = `extern` block begins here
+ 
+-ast_passes_extern_without_abi = extern declarations without an explicit ABI are deprecated
++ast_passes_extern_without_abi = 没有明确指明的 ABI 的 `extern` 块已被弃用
+ 
+ ast_passes_feature_on_non_nightly = `#![feature]` may not be used on the {$channel} release channel
+     .suggestion = remove the attribute
+     .stable_since = the feature `{$name}` has been stable since `{$since}` and no longer requires an attribute to enable
+ 
+-ast_passes_fieldless_union = unions cannot have zero fields
++ast_passes_fieldless_union = 连字段都不配有的杂鱼 union 可真失败呢～
+ 
+-ast_passes_fn_body_extern = incorrect function inside `extern` block
+-    .cannot_have = cannot have a body
+-    .suggestion = remove the invalid body
+-    .help = you might have meant to write a function accessible through FFI, which can be done by writing `extern fn` outside of the `extern` block
+-    .label = `extern` blocks define existing foreign functions and functions inside of them cannot have a body
++ast_passes_fn_body_extern = `extern` 块中不正确的函数，好耶
++    .cannot_have = 不可以有函数体，绝对不可以！！！
++    .suggestion = 删掉！！！
++    .help = 你的意思可能是想要编写可以通过 FFI 访问的函数，这可以通过在 `extern` 块外面编写 `extern fn` 来完成
++    .label = `extern` 块定义已存在的外部函数，其中的函数定义，函数体什么的，才不可以呢～
+ 
+ ast_passes_fn_param_c_var_args_not_last =
+-    `...` must be the last argument of a C-variadic function
++    `...` 必须是具有 C 风格的可变参数的函数的最后一个参数
+ 
+ ast_passes_fn_param_c_var_args_only =
+-    C-variadic function must be declared with at least one named argument
++    具有 C 风格的可变参数的函数至少有 1 个命名参数
+ 
+ ast_passes_fn_param_doc_comment =
+-    documentation comments cannot be applied to function parameters
+-    .label = doc comments are not allowed here
++    不能为函数的参数使用文档注释
++    .label = 此处不允许文档注释
+ 
+ ast_passes_fn_param_forbidden_attr =
+-    allow, cfg, cfg_attr, deny, expect, forbid, and warn are the only allowed built-in attributes in function parameters
++    allow、cfg、cfg_attr、deny、expect、forbid 和 warn 是在函数参数中唯一允许的内置属性
+ 
+ ast_passes_fn_param_forbidden_self =
+-    `self` parameter is only allowed in associated functions
++    `self` 参数只在关联函数中被允许
+     .label = not semantically valid as function parameter
+-    .note = associated functions are those in `impl` or `trait` definitions
++    .note = 关联函数是在 `impl` 或 `trait` 中的定义
+ 
+ ast_passes_fn_param_too_many =
+-    function can not have more than {$max_num_args} arguments
++    {$max_num_args} 个参数？太多了啊！！！
+ 
+ ast_passes_fn_without_body =
+-    free function without a body
++    函数体？哪里？没有啊喂！！！
+     .suggestion = provide a definition for the function
+ 
+ ast_passes_forbidden_default =
+-    `default` is only allowed on items in trait impls
+-    .label = `default` because of this
++    `default` 仅在 trait 实现的项中被允许
++    .label = `default` 是因为
+ 
+ ast_passes_forbidden_lifetime_bound =
+-    lifetime bounds cannot be used in this context
++    生命周期不是哪里都可以用的啊喂！
+ 
+ ast_passes_forbidden_non_lifetime_param =
+-    only lifetime parameters can be used in this context
++    非生命周期参数不是哪里都可以用的啊喂！
+ 
+ ast_passes_generic_before_constraints = generic arguments must come before the first constraint
+     .constraints = {$constraint_len ->
+@@ -145,12 +145,12 @@ ast_passes_generic_before_constraints = generic arguments must come before the f
+     *[other] arguments
+     }
+ 
+-ast_passes_generic_default_trailing = generic parameters with a default must be trailing
++ast_passes_generic_default_trailing = 带有默认的泛型参数必须排在后面
+ 
+-ast_passes_impl_trait_path = `impl Trait` is not allowed in path parameters
++ast_passes_impl_trait_path = 路径参数中不允许 `impl Trait`
+ 
+-ast_passes_incompatible_features = `{$f1}` and `{$f2}` are incompatible, using them at the same time is not allowed
+-    .help = remove one of these features
++ast_passes_incompatible_features = `{$f1}` 与 `{$f2}` 不兼容，不允许同时使用它们
++    .help = 删除两者之一
+ 
+ ast_passes_inherent_cannot_be = inherent impls cannot be {$annotation}
+     .because = {$annotation} because of this
+@@ -158,33 +158,33 @@ ast_passes_inherent_cannot_be = inherent impls cannot be {$annotation}
+     .only_trait = only trait implementations may be annotated with {$annotation}
+ 
+ ast_passes_invalid_label =
+-    invalid label name `{$name}`
++    非法标签名 `{$name}`
+ 
+ ast_passes_invalid_unnamed_field =
+-    unnamed fields are not allowed outside of structs or unions
+-    .label = unnamed field declared here
++    无名字段不能在结构体或联合体以外使用
++    .label = 这里声明的无名字段
+ 
+ ast_passes_invalid_unnamed_field_ty =
+-    unnamed fields can only have struct or union types
+-    .label = not a struct or union
++    无名字段只能具有结构体或联合体类型
++    .label = 不是结构体或联合体
+ 
+-ast_passes_item_underscore = `{$kind}` items in this context need a name
+-    .label = `_` is not a valid name for this `{$kind}` item
++ast_passes_item_underscore = 当前上下文中的 `{$kind}` 需要名字
++    .label = `_` 对于该 `{$kind}` 不是有效的名称
+ 
+ ast_passes_keyword_lifetime =
+-    lifetimes cannot use keyword names
++    生命周期不能使用关键字名字
+ 
+ ast_passes_match_arm_with_no_body =
+-    `match` arm with no body
+-    .suggestion = add a body after the pattern
++    `match` 臂没有体
++    .suggestion = 为该模式添加身体
+ 
+-ast_passes_module_nonascii = trying to load file for module `{$name}` with non-ascii identifier name
+-    .help = consider using the `#[path]` attribute to specify filesystem path
++ast_passes_module_nonascii = 尝试为带有非 ASCII 标识符名的模块 `{$name}` 加载文件
++    .help = 考虑使用 `#[path]` 属性来指明文件系统路径
+ 
+ ast_passes_negative_bound_not_supported =
+-    negative bounds are not supported
++    不支持否定边界
+ 
+-ast_passes_nested_impl_trait = nested `impl Trait` is not allowed
++ast_passes_nested_impl_trait = 不允许嵌套 `impl Trait`
+     .outer = outer `impl Trait`
+     .inner = nested `impl Trait` here
+ 
+@@ -197,7 +197,7 @@ ast_passes_obsolete_auto = `impl Trait for .. {"{}"}` is an obsolete syntax
+ 
+ ast_passes_optional_const_exclusive = `~const` and `{$modifier}` are mutually exclusive
+ 
+-ast_passes_optional_trait_object = `?Trait` is not permitted in trait object types
++ast_passes_optional_trait_object = `?Trait` 在 trait 对象类型中不被允许
+ 
+ ast_passes_optional_trait_supertrait = `?Trait` is not permitted in supertraits
+     .note = traits are `?{$path_str}` by default
+@@ -205,17 +205,17 @@ ast_passes_optional_trait_supertrait = `?Trait` is not permitted in supertraits
+ ast_passes_out_of_order_params = {$param_ord} parameters must be declared prior to {$max_param} parameters
+     .suggestion = reorder the parameters: lifetimes, then consts and types
+ 
+-ast_passes_pattern_in_bodiless = patterns aren't allowed in functions without bodies
+-    .label = pattern not allowed in function without body
++ast_passes_pattern_in_bodiless = 不允许在没有函数体的函数定义中使用模式
++    .label = 不允许在没有函数体的函数定义中使用模式
+ 
+-ast_passes_pattern_in_fn_pointer = patterns aren't allowed in function pointer types
++ast_passes_pattern_in_fn_pointer = 不允许在函数指针类型中使用模式
+ 
+-ast_passes_pattern_in_foreign = patterns aren't allowed in foreign function declarations
+-    .label = pattern not allowed in foreign function
++ast_passes_pattern_in_foreign = 不允许在外部函数声明中使用模式
++    .label = 外部函数不允许模式
+ 
+ ast_passes_show_span = {$msg}
+ 
+-ast_passes_stability_outside_std = stability attributes may not be used outside of the standard library
++ast_passes_stability_outside_std = 不能在标准库之外使用 `#[stable(_)]` 属性宏
+ 
+ ast_passes_static_without_body =
+     free static item without body
+@@ -231,18 +231,18 @@ ast_passes_tilde_const_disallowed = `~const` is not allowed here
+     .item = this item cannot have `~const` trait bounds
+ 
+ ast_passes_trait_fn_const =
+-    functions in traits cannot be declared const
+-    .label = functions in traits cannot be const
++    trait 中的函数不能被定义为 const
++    .label = trait 中的函数不能是 const
+ 
+ ast_passes_trait_object_single_bound = only a single explicit lifetime bound is permitted
+ 
+ ast_passes_ty_alias_without_body =
+-    free type alias without body
++    类型别名？哪里？什么类型？没有啊喂！！！
+     .suggestion = provide a definition for the type
+ 
+-ast_passes_unsafe_item = {$kind} cannot be declared unsafe
++ast_passes_unsafe_item = {$kind} 不能被声明为 unsafe
+ 
+-ast_passes_unsafe_negative_impl = negative impls cannot be unsafe
++ast_passes_unsafe_negative_impl = 否定实现不能是 unsafe 的
+     .negative = negative because of this
+     .unsafe = unsafe because of this
+ 
+diff --git a/compiler/rustc_attr/messages.ftl b/compiler/rustc_attr/messages.ftl
+index 7281282f..9e412863 100644
+--- a/compiler/rustc_attr/messages.ftl
++++ b/compiler/rustc_attr/messages.ftl
+@@ -1,25 +1,25 @@
+ attr_cfg_predicate_identifier =
+-    `cfg` predicate key must be an identifier
++    `cfg` 断言键必须是标识符
+ 
+ attr_deprecated_item_suggestion =
+-    suggestions on deprecated items are unstable
+-    .help = add `#![feature(deprecated_suggestion)]` to the crate root
++    废弃项上的建议是 unstable 特性
++    .help = 将 `#![feature(deprecated_suggestion)]` 添加到 crate 根
+     .note = see #94785 for more details
+ 
+ attr_expected_one_cfg_pattern =
+-    expected 1 cfg-pattern
++    需要 1 个 cfg 模式，请加上它并对它道歉！
+ 
+ attr_expected_single_version_literal =
+-    expected single version literal
++    需要单个版本字面量
+ 
+ attr_expected_version_literal =
+-    expected a version literal
++    需要 1 个版本字面量
+ 
+ attr_expects_feature_list =
+-    `{$name}` expects a list of feature names
++    `{$name}` 需要一组特性名，请加上它并对它道歉！
+ 
+ attr_expects_features =
+-    `{$name}` expects feature names
++    `{$name}` 需要特性名
+ 
+ attr_incorrect_meta_item =
+     incorrect meta item
+@@ -89,7 +89,7 @@ attr_rustc_promotable_pairing =
+     `rustc_promotable` attribute must be paired with either a `rustc_const_unstable` or a `rustc_const_stable` attribute
+ 
+ attr_soft_no_args =
+-    `soft` should not have any arguments
++    `soft` 不应该有任何参数
+ 
+ attr_unknown_meta_item =
+     unknown meta item '{$item}'
+diff --git a/compiler/rustc_borrowck/messages.ftl b/compiler/rustc_borrowck/messages.ftl
+index 8c5a1d89..a92ceb3a 100644
+--- a/compiler/rustc_borrowck/messages.ftl
++++ b/compiler/rustc_borrowck/messages.ftl
+@@ -1,20 +1,20 @@
+ borrowck_assign_due_to_use_closure =
+-    assignment occurs due to use in closure
++    分派是发生在闭包里的，嘻嘻
+ 
+ borrowck_assign_due_to_use_coroutine =
+-    assign occurs due to use in coroutine
++    分派是发生在协程里的，嘻嘻
+ 
+ borrowck_assign_part_due_to_use_closure =
+-    assignment to part occurs due to use in closure
++    部分分派是发生在闭包里的，嘻嘻
+ 
+ borrowck_assign_part_due_to_use_coroutine =
+-    assign to part occurs due to use in coroutine
++    部分分派是发生在协程里的，嘻嘻
+ 
+ borrowck_borrow_due_to_use_closure =
+-    borrow occurs due to use in closure
++    闭包借用也是借用！
+ 
+ borrowck_borrow_due_to_use_coroutine =
+-    borrow occurs due to use in coroutine
++    协程借用也是借用！
+ 
+ borrowck_calling_operator_moves_lhs =
+     calling this operator moves the left-hand side
+@@ -51,28 +51,28 @@ borrowck_closure_moved_twice =
+     closure cannot be moved more than once as it is not `Copy` due to moving the variable `{$place_name}` out of its environment
+ 
+ borrowck_consider_borrow_type_contents =
+-    help: consider calling `.as_ref()` or `.as_mut()` to borrow the type's contents
++    才... 才不会告诉你：调用 `.as_ref()` 或 `.as_mut()` 来借用该类型的内容
+ 
+ borrowck_could_not_normalize =
+-    could not normalize `{$value}`
++    无法规范化 `{$value}`
+ 
+ borrowck_could_not_prove =
+-    could not prove `{$predicate}`
++    无法证明 `{$predicate}`
+ 
+ borrowck_func_take_self_moved_place =
+     `{$func}` takes ownership of the receiver `self`, which moves {$place_name}
+ 
+ borrowck_generic_does_not_live_long_enough =
+-    `{$kind}` does not live long enough
++    `{$kind}` 的生命周期这么短，不行啊
+ 
+ borrowck_higher_ranked_lifetime_error =
+-    higher-ranked lifetime error
++    高阶生命周期错误
+ 
+ borrowck_higher_ranked_subtype_error =
+-    higher-ranked subtype error
++    高阶子类型错误
+ 
+ borrowck_lifetime_constraints_error =
+-    lifetime may not live long enough
++    生命周期这么短，不行啊
+ 
+ borrowck_move_out_place_here =
+     {$place} is moved here
+@@ -205,10 +205,10 @@ borrowck_value_moved_here =
+     }
+ 
+ borrowck_var_borrow_by_use_in_closure =
+-    borrow occurs due to use in closure
++    闭包里面的... 这些都算是借用！你以为别的女孩子也会像我一样这样提醒你吗？
+ 
+ borrowck_var_borrow_by_use_in_coroutine =
+-    borrow occurs due to use in coroutine
++    协程里面的... 这些都算是借用！你以为别的女孩子也会像我一样这样提醒你吗？
+ 
+ borrowck_var_borrow_by_use_place_in_closure =
+     {$is_single_var ->
+diff --git a/compiler/rustc_builtin_macros/messages.ftl b/compiler/rustc_builtin_macros/messages.ftl
+index dda466b0..ca8fd253 100644
+--- a/compiler/rustc_builtin_macros/messages.ftl
++++ b/compiler/rustc_builtin_macros/messages.ftl
+@@ -1,5 +1,5 @@
+-builtin_macros_alloc_error_must_be_fn = alloc_error_handler must be a function
+-builtin_macros_alloc_must_statics = allocators must be statics
++builtin_macros_alloc_error_must_be_fn = alloc_error_handler 必须是函数
++builtin_macros_alloc_must_statics = 分配器必须是静态的
+ 
+ builtin_macros_asm_clobber_abi = clobber_abi
+ builtin_macros_asm_clobber_no_reg = asm with `clobber_abi` must specify explicit registers for outputs
+diff --git a/compiler/rustc_codegen_llvm/messages.ftl b/compiler/rustc_codegen_llvm/messages.ftl
+index 7a86ddc7..2f601c9b 100644
+--- a/compiler/rustc_codegen_llvm/messages.ftl
++++ b/compiler/rustc_codegen_llvm/messages.ftl
+@@ -6,8 +6,8 @@ codegen_llvm_dlltool_fail_import_library =
+     {$stderr}
+ 
+ codegen_llvm_dynamic_linking_with_lto =
+-    cannot prefer dynamic linking when performing LTO
+-    .note = only 'staticlib', 'bin', and 'cdylib' outputs are supported with LTO
++    不能在执行 LTO 时倾向于动态链接
++    .note = 只有 'staticlib'、'bin' 和 'cdylib' 类型的输出支持 LTO
+ 
+ codegen_llvm_error_calling_dlltool =
+     Error calling dlltool '{$dlltool_path}': {$error}
+diff --git a/compiler/rustc_const_eval/messages.ftl b/compiler/rustc_const_eval/messages.ftl
+index 4a426ed1..5b60ecf6 100644
+--- a/compiler/rustc_const_eval/messages.ftl
++++ b/compiler/rustc_const_eval/messages.ftl
+@@ -1,5 +1,5 @@
+ const_eval_address_space_full =
+-    there are no more free addresses in the address space
++    好大的内存，要溢出来了...
+ 
+ const_eval_align_offset_invalid_align =
+     `align_offset` called with non-power-of-two align: {$target_align}
+@@ -13,7 +13,7 @@ const_eval_alignment_check_failed =
+ const_eval_already_reported =
+     an error has already been reported elsewhere (this should not usually be printed)
+ const_eval_assume_false =
+-    `assume` called with `false`
++    `assume` 调用带有参数 `false`
+ 
+ const_eval_await_non_const =
+     cannot convert `{$ty}` into a future in {const_eval_const_context}s
+diff --git a/compiler/rustc_driver_impl/messages.ftl b/compiler/rustc_driver_impl/messages.ftl
+index 39462112..967e1320 100644
+--- a/compiler/rustc_driver_impl/messages.ftl
++++ b/compiler/rustc_driver_impl/messages.ftl
+@@ -1,22 +1,22 @@
+-driver_impl_ice = the compiler unexpectedly panicked. this is a bug.
+-driver_impl_ice_bug_report = we would appreciate a bug report: {$bug_report_url}
+-driver_impl_ice_bug_report_internal_feature = using internal features is not supported and expected to cause internal compiler errors when used incorrectly
+-driver_impl_ice_exclude_cargo_defaults = some of the compiler flags provided by cargo are hidden
++driver_impl_ice = 坏... 坏掉了...
++driver_impl_ice_bug_report = 我们或许可以欣赏一个 bug 报告：{$bug_report_url}
++driver_impl_ice_bug_report_internal_feature = 使用内部特性是不被支持的，并且在不当使用时引起内部编译器错误是预期行为
++driver_impl_ice_exclude_cargo_defaults = 一些由 cargo 提供的编译器参数已被隐藏
+ 
+-driver_impl_ice_flags = compiler flags: {$flags}
+-driver_impl_ice_path = please attach the file at `{$path}` to your bug report
+-driver_impl_ice_path_error = the ICE couldn't be written to `{$path}`: {$error}
+-driver_impl_ice_path_error_env = the environment variable `RUSTC_ICE` is set to `{$env_var}`
+-driver_impl_ice_version = rustc {$version} running on {$triple}
++driver_impl_ice_flags = 编译器参数：{$flags}
++driver_impl_ice_path = 请在你的 bug 报告中携带位于 `{$path}` 的文件
++driver_impl_ice_path_error = 无法向 `{$path}` 写入 ICE 报告: {$error}
++driver_impl_ice_path_error_env = 环境变量 `RUSTC_ICE` 被设置为 `{$env_var}`
++driver_impl_ice_version = rustc {$version} 在 {$triple} 上运行
+ 
+-driver_impl_rlink_empty_version_number = The input does not contain version number
++driver_impl_rlink_empty_version_number = 输入不包含版本号
+ 
+ driver_impl_rlink_encoding_version_mismatch = .rlink file was produced with encoding version `{$version_array}`, but the current version is `{$rlink_version}`
+ 
+-driver_impl_rlink_no_a_file = rlink must be a file
++driver_impl_rlink_no_a_file = rlink 必须是一个文件
+ 
+ driver_impl_rlink_rustc_version_mismatch = .rlink file was produced by rustc version `{$rustc_version}`, but the current version is `{$current_version}`
+ 
+-driver_impl_rlink_unable_to_read = failed to read rlink file: `{$err}`
++driver_impl_rlink_unable_to_read = 无法读取 rlink 文件：`{$err}`
+ 
+-driver_impl_rlink_wrong_file_type = The input does not look like a .rlink file
++driver_impl_rlink_wrong_file_type = 输入看起来不像是一个 rlink 文件
+diff --git a/compiler/rustc_errors/messages.ftl b/compiler/rustc_errors/messages.ftl
+index d68dba0b..43dcec7f 100644
+--- a/compiler/rustc_errors/messages.ftl
++++ b/compiler/rustc_errors/messages.ftl
+@@ -6,10 +6,10 @@ errors_delayed_at_without_newline =
+     delayed at {$emitted_at} - {$note}
+ 
+ errors_expected_lifetime_parameter =
+-    expected lifetime {$count ->
++    需要生命周期 {$count ->
+         [1] parameter
+         *[other] parameters
+-    }
++    }，请添加上并对它道歉！
+ 
+ errors_indicate_anonymous_lifetime =
+     indicate the anonymous {$count ->
+diff --git a/compiler/rustc_errors/src/lib.rs b/compiler/rustc_errors/src/lib.rs
+index 959e26fe..6a66efbe 100644
+--- a/compiler/rustc_errors/src/lib.rs
++++ b/compiler/rustc_errors/src/lib.rs
+@@ -1166,16 +1166,17 @@ pub fn print_error_count(&self, registry: &Registry) {
+ 
+         inner.emit_stashed_diagnostics();
+ 
+-        let warnings = match inner.deduplicated_warn_count {
++        let errors = match inner.deduplicated_err_count {
+             0 => Cow::from(""),
+-            1 => Cow::from("1 warning emitted"),
+-            count => Cow::from(format!("{count} warnings emitted")),
++            _ => Cow::from("大哥哥这种问题都会犯欸，不行呀，杂鱼~"),
+         };
+-        let errors = match inner.deduplicated_err_count {
++        let mut warnings = match inner.deduplicated_warn_count {
+             0 => Cow::from(""),
+-            1 => Cow::from("aborting due to 1 previous error"),
+-            count => Cow::from(format!("aborting due to {count} previous errors")),
++            _ => Cow::from("大哥哥这种问题都会犯欸，不行呀，杂鱼~"),
+         };
++        if !errors.is_empty() {
++            warnings = Cow::from("");
++        }
+         if inner.treat_err_as_bug() {
+             return;
+         }
+@@ -1212,19 +1213,21 @@ pub fn print_error_count(&self, registry: &Registry) {
+                 if error_codes.len() > 1 {
+                     let limit = if error_codes.len() > 9 { 9 } else { error_codes.len() };
+                     inner.failure_note(format!(
+-                        "Some errors have detailed explanations: {}{}",
++                        "呐，{}{}",
+                         error_codes[..limit].join(", "),
+                         if error_codes.len() > 9 { "..." } else { "." }
+                     ));
+                     inner.failure_note(format!(
+-                        "For more information about an error, try \
+-                         `rustc --explain {}`.",
++                        "才... 才不会告诉你执行 \
++                         `rustc --explain {}` \
++                         会发生什么呢！",
+                         &error_codes[0]
+                     ));
+                 } else {
+                     inner.failure_note(format!(
+-                        "For more information about this error, try \
+-                         `rustc --explain {}`.",
++                        "才... 才不会告诉你执行 \
++                         `rustc --explain {}` \
++                         会发生什么呢！.",
+                         &error_codes[0]
+                     ));
+                 }
+@@ -1783,12 +1786,12 @@ fn color(self) -> ColorSpec {
+ 
+     pub fn to_str(self) -> &'static str {
+         match self {
+-            Bug | DelayedBug => "error: internal compiler error",
+-            Fatal | Error { .. } => "error",
+-            Warning(_) => "warning",
+-            Note | OnceNote => "note",
+-            Help | OnceHelp => "help",
+-            FailureNote => "failure-note",
++            Bug | DelayedBug => "坏掉了...",
++            Fatal | Error { .. } => "笨蛋！",
++            Warning(_) => "杂鱼～",
++            Note | OnceNote => "呐",
++            Help | OnceHelp => "才...才不会告诉你...",
++            FailureNote => "呐",
+             Allow => panic!("Shouldn't call on allowed error"),
+             Expect(_) => panic!("Shouldn't call on expected error"),
+         }
+diff --git a/compiler/rustc_expand/messages.ftl b/compiler/rustc_expand/messages.ftl
+index 475dd348..13196d99 100644
+--- a/compiler/rustc_expand/messages.ftl
++++ b/compiler/rustc_expand/messages.ftl
+@@ -1,5 +1,5 @@
+ expand_arg_not_attributes =
+-    second argument must be `attributes`
++    第二个参数必须是 `attributes`
+ 
+ expand_attr_no_arguments =
+     attribute must have either one or two arguments
+diff --git a/compiler/rustc_hir_analysis/messages.ftl b/compiler/rustc_hir_analysis/messages.ftl
+index 139e1c0a..ca76870d 100644
+--- a/compiler/rustc_hir_analysis/messages.ftl
++++ b/compiler/rustc_hir_analysis/messages.ftl
+@@ -2,7 +2,7 @@ hir_analysis_ambiguous_assoc_item = ambiguous associated {$assoc_kind} `{$assoc_
+     .label = ambiguous associated {$assoc_kind} `{$assoc_name}`
+ 
+ hir_analysis_ambiguous_lifetime_bound =
+-    ambiguous lifetime bound, explicit lifetime bound required
++    需要显式指定生命周期边界，才不会帮你进行呢～
+ 
+ hir_analysis_assoc_item_not_found = associated {$assoc_kind} `{$assoc_name}` not found for `{$ty_param_name}`
+ 
+@@ -16,7 +16,7 @@ hir_analysis_assoc_item_not_found_similar_in_other_trait_sugg = change the assoc
+ hir_analysis_assoc_item_not_found_similar_in_other_trait_with_bound_sugg = and also change the associated {$assoc_kind} name
+ hir_analysis_assoc_item_not_found_similar_sugg = there is an associated {$assoc_kind} with a similar name
+ 
+-hir_analysis_assoc_kind_mismatch = expected {$expected}, found {$got}
++hir_analysis_assoc_kind_mismatch = {$got} 是... 是什么？明明想要的是 {$expected} 呢...
+     .label = unexpected {$got}
+     .expected_because_label = expected a {$expected} because of this associated {$expected}
+     .note = the associated {$assoc_kind} is defined here
+@@ -426,8 +426,8 @@ hir_analysis_variadic_function_compatible_convention = C-variadic function must
+ 
+ hir_analysis_variances_of = {$variances_of}
+ 
+-hir_analysis_where_clause_on_main = `main` function is not allowed to have a `where` clause
+-    .label = `main` cannot have a `where` clause
++hir_analysis_where_clause_on_main = `main` 就是 `main`，`where` 什么的都不要啊～
++    .label = `main` 函数不能有 `where` 子句
+ 
+ hir_analysis_wrong_number_of_generic_arguments_to_intrinsic =
+     intrinsic has wrong number of {$descr} parameters: found {$found}, expected {$expected}
+diff --git a/compiler/rustc_hir_typeck/messages.ftl b/compiler/rustc_hir_typeck/messages.ftl
+index 4fd9391a..5255e3f1 100644
+--- a/compiler/rustc_hir_typeck/messages.ftl
++++ b/compiler/rustc_hir_typeck/messages.ftl
+@@ -1,6 +1,6 @@
+ hir_typeck_add_missing_parentheses_in_range = you must surround the range in parentheses to call its `{$func_name}` function
+ 
+-hir_typeck_add_return_type_add = try adding a return type
++hir_typeck_add_return_type_add = 试着添加返回类型
+ 
+ hir_typeck_add_return_type_missing_here = a return type might be missing here
+ 
+diff --git a/compiler/rustc_incremental/messages.ftl b/compiler/rustc_incremental/messages.ftl
+index e74173b2..556b33d5 100644
+--- a/compiler/rustc_incremental/messages.ftl
++++ b/compiler/rustc_incremental/messages.ftl
+@@ -91,7 +91,7 @@ incremental_undefined_clean_dirty_assertions =
+ incremental_undefined_clean_dirty_assertions_item =
+     clean/dirty auto-assertions not yet defined for Node::Item.node={$kind}
+ 
+-incremental_unknown_item = unknown item `{$name}`
++incremental_unknown_item = 未知项 `{$name}`
+ 
+ incremental_unrecognized_depnode = unrecognized `DepNode` variant: {$name}
+ 
+diff --git a/compiler/rustc_infer/messages.ftl b/compiler/rustc_infer/messages.ftl
+index 2de87cbe..6b1206da 100644
+--- a/compiler/rustc_infer/messages.ftl
++++ b/compiler/rustc_infer/messages.ftl
+@@ -101,7 +101,7 @@ infer_but_needs_to_satisfy = {$has_param_name ->
+     .introduced_by_bound = `'static` lifetime requirement introduced by this bound
+ 
+ infer_compare_impl_item_obligation = ...so that the definition in impl matches the definition from the trait
+-infer_consider_specifying_length = consider specifying the actual array length
++infer_consider_specifying_length = 考虑指定数组的实际长度
+ infer_data_flows = ...but data{$label_var1_exists ->
+     [true] {" "}from `{$label_var1}`
+     *[false] -> {""}
+@@ -136,8 +136,8 @@ infer_explicit_lifetime_required_with_param_type = explicit lifetime required in
+ 
+ infer_fn_consider_casting = consider casting the fn item to a fn pointer: `{$casting}`
+ 
+-infer_fn_uniq_types = different fn items have unique types, even if their signatures are the same
+-infer_fps_cast = consider casting to a fn pointer
++infer_fn_uniq_types = 即使具有相同函数签名的不同 fn item 也具有不同的类型
++infer_fps_cast = 考虑转换为函数指针
+ infer_fps_cast_both = consider casting both fn items to fn pointers using `as {$expected_sig}`
+ 
+ infer_fps_items_are_distinct = fn items are distinct from fn pointers
+diff --git a/compiler/rustc_interface/messages.ftl b/compiler/rustc_interface/messages.ftl
+index bd9fad8b..4ba413b7 100644
+--- a/compiler/rustc_interface/messages.ftl
++++ b/compiler/rustc_interface/messages.ftl
+@@ -1,5 +1,5 @@
+ interface_cant_emit_mir =
+-    could not emit MIR: {$error}
++    无法生成 MIR：{$error}
+ 
+ interface_emoji_identifier =
+     identifiers cannot contain emoji: `{$ident}`
+@@ -11,7 +11,7 @@ interface_failed_writing_file =
+     failed to write file {$path}: {$error}"
+ 
+ interface_ferris_identifier =
+-    Ferris cannot be used as an identifier
++    是谁想用本小姐的名字当作标识符？
+     .suggestion = try using their name instead
+ 
+ interface_generated_file_conflicts_with_directory =
+diff --git a/compiler/rustc_lint/messages.ftl b/compiler/rustc_lint/messages.ftl
+index 40e6b1b5..32783ec4 100644
+--- a/compiler/rustc_lint/messages.ftl
++++ b/compiler/rustc_lint/messages.ftl
+@@ -70,7 +70,7 @@ lint_builtin_explicit_outlives = outlives requirements can be inferred
+         *[other] these bounds
+     }
+ 
+-lint_builtin_export_name_fn = declaration of a function with `export_name`
++lint_builtin_export_name_fn = 具有 `export_name` 的函数的声明
+ lint_builtin_export_name_method = declaration of a method with `export_name`
+ 
+ lint_builtin_export_name_static = declaration of a static with `export_name`
+diff --git a/compiler/rustc_metadata/messages.ftl b/compiler/rustc_metadata/messages.ftl
+index 8da6f000..ea14e7d8 100644
+--- a/compiler/rustc_metadata/messages.ftl
++++ b/compiler/rustc_metadata/messages.ftl
+@@ -14,7 +14,7 @@ metadata_cannot_find_crate =
+     can't find crate for `{$crate_name}`{$add_info}
+ 
+ metadata_cant_find_crate =
+-    can't find crate
++    找不到 crate
+ 
+ metadata_compiler_missing_profiler =
+     the compiler may have been built without the profiler runtime
+@@ -29,10 +29,10 @@ metadata_consider_adding_std =
+     consider adding the standard library to the sysroot with `x build library --target {$locator_triple}`
+ 
+ metadata_consider_building_std =
+-    consider building the standard library from source with `cargo build -Zbuild-std`
++    通过 `cargo build -Zbuild-std` 构建标准库什么的，才不会告诉你呢～
+ 
+ metadata_consider_downloading_target =
+-    consider downloading the target with `rustup target add {$locator_triple}`
++    通过 `rustup target add {$locator_triple}` 下载什么的，才不会告诉你呢～
+ 
+ metadata_crate_dep_multiple =
+     cannot satisfy dependencies so `{$crate_name}` only shows up once
+@@ -201,7 +201,7 @@ metadata_no_multiple_alloc_error_handler =
+     .label = cannot define a new allocation error handler
+ 
+ metadata_no_multiple_global_alloc =
+-    cannot define multiple global allocators
++    分、分配器什么的... 只能有一个...
+     .label = cannot define a new global allocator
+ 
+ metadata_no_panic_strategy =
+@@ -219,10 +219,10 @@ metadata_not_profiler_runtime =
+ metadata_only_provide_library_name = only provide the library name `{$suggested_name}`, not the full filename
+ 
+ metadata_prev_alloc_error_handler =
+-    previous allocation error handler defined here
++    之前的 OOM Handler 在这里喵
+ 
+ metadata_prev_global_alloc =
+-    previous global allocator defined here
++    之前的全局分配器在这里喵
+ 
+ metadata_profiler_builtins_needs_core =
+     `profiler_builtins` crate (required by compiler options) is not compatible with crate attribute `#![no_core]`
+diff --git a/compiler/rustc_middle/messages.ftl b/compiler/rustc_middle/messages.ftl
+index 27d555d7..a264fa13 100644
+--- a/compiler/rustc_middle/messages.ftl
++++ b/compiler/rustc_middle/messages.ftl
+@@ -1,5 +1,5 @@
+ middle_adjust_for_foreign_abi_error =
+-    target architecture {$arch} does not support `extern {$abi}` ABI
++    目标架构 {$arch} 不支持 `extern {$abi}` ABI
+ 
+ middle_assert_async_resume_after_panic = `async fn` resumed after panicking
+ 
+@@ -10,7 +10,7 @@ middle_assert_coroutine_resume_after_panic = coroutine resumed after panicking
+ middle_assert_coroutine_resume_after_return = coroutine resumed after completion
+ 
+ middle_assert_divide_by_zero =
+-    attempt to divide `{$val}` by zero
++    除数就和你抽卡的出货率一样呢～
+ 
+ middle_assert_gen_resume_after_panic = `gen` fn or block cannot be further iterated on after it panicked
+ 
+@@ -74,7 +74,7 @@ middle_recursion_limit_reached =
+     reached the recursion limit finding the struct tail for `{$ty}`
+     .help = consider increasing the recursion limit by adding a `#![recursion_limit = "{$suggested_limit}"]`
+ 
+-middle_requires_lang_item = requires `{$name}` lang_item
++middle_requires_lang_item = `{$name}`？语言项？那是什么呀... 好像很厉害的样子，但是，听不懂...
+ 
+ middle_strict_coherence_needs_negative_coherence =
+     to use `strict_coherence` on this trait, the `with_negative_coherence` feature must be enabled
+diff --git a/compiler/rustc_mir_build/messages.ftl b/compiler/rustc_mir_build/messages.ftl
+index 615b5534..230be8de 100644
+--- a/compiler/rustc_mir_build/messages.ftl
++++ b/compiler/rustc_mir_build/messages.ftl
+@@ -1,8 +1,8 @@
+-mir_build_adt_defined_here = `{$ty}` defined here
++mir_build_adt_defined_here = `{$ty}` 在此定义～
+ 
+-mir_build_already_borrowed = cannot borrow value as mutable because it is also borrowed as immutable
++mir_build_already_borrowed = 已经被借用了，不可以再借用了喵
+ 
+-mir_build_already_mut_borrowed = cannot borrow value as immutable because it is also borrowed as mutable
++mir_build_already_mut_borrowed = 已经被借用了，不可以再借用了喵
+ 
+ mir_build_assoc_const_in_pattern = associated consts cannot be referenced in patterns
+ 
+@@ -10,7 +10,7 @@ mir_build_bindings_with_variant_name =
+     pattern binding `{$name}` is named the same as one of the variants of the type `{$ty_path}`
+     .suggestion = to match on the variant, qualify the path
+ 
+-mir_build_borrow = value is borrowed by `{$name}` here
++mir_build_borrow = 值在此处被 `{$name}` 借用
+ 
+ mir_build_borrow_of_layout_constrained_field_requires_unsafe =
+     borrow of layout constrained field with interior mutability is unsafe and requires unsafe block
+@@ -107,7 +107,7 @@ mir_build_extern_static_requires_unsafe_unsafe_op_in_unsafe_fn_allowed =
+     .note = extern statics are not controlled by the Rust type system: invalid data, aliasing violations or data races will cause undefined behavior
+     .label = use of extern static
+ 
+-mir_build_float_pattern = floating-point types cannot be used in patterns
++mir_build_float_pattern = 不可以在模式中使用浮点数，建议重开谢谢喵～
+ 
+ mir_build_indirect_structural_match =
+     to use a constant of type `{$non_sm_ty}` in a pattern, `{$non_sm_ty}` must be annotated with `#[derive(PartialEq, Eq)]`
+@@ -391,11 +391,11 @@ mir_build_unsafe_op_in_unsafe_fn_union_field_requires_unsafe =
+ 
+ mir_build_unsized_pattern = cannot use unsized non-slice type `{$non_sm_ty}` in constant patterns
+ 
+-mir_build_unused_unsafe = unnecessary `unsafe` block
+-    .label = unnecessary `unsafe` block
++mir_build_unused_unsafe = `unsafe`？有什么用呀～
++    .label = 不必要的 `unsafe` 块
+ 
+ mir_build_unused_unsafe_enclosing_block_label = because it's nested under this `unsafe` block
+ 
+ mir_build_variant_defined_here = not covered
+ 
+-mir_build_wrap_suggestion = consider wrapping the function body in an unsafe block
++mir_build_wrap_suggestion = 不安全，不安全喵～
+diff --git a/compiler/rustc_mir_dataflow/messages.ftl b/compiler/rustc_mir_dataflow/messages.ftl
+index 5698367e..47e7daf4 100644
+--- a/compiler/rustc_mir_dataflow/messages.ftl
++++ b/compiler/rustc_mir_dataflow/messages.ftl
+@@ -1,5 +1,5 @@
+ mir_dataflow_duplicate_values_for =
+-    duplicate values for `{$name}`
++    对于 `{$name}` 的重复项
+ 
+ mir_dataflow_path_must_end_in_filename =
+     path must end in a filename
+diff --git a/compiler/rustc_mir_transform/messages.ftl b/compiler/rustc_mir_transform/messages.ftl
+index b8dbdf18..71b89ccd 100644
+--- a/compiler/rustc_mir_transform/messages.ftl
++++ b/compiler/rustc_mir_transform/messages.ftl
+@@ -1,19 +1,19 @@
+-mir_transform_arithmetic_overflow = this arithmetic operation will overflow
+-mir_transform_call_to_unsafe_label = call to unsafe function
++mir_transform_arithmetic_overflow = 算术运算溢... 溢出来了...
++mir_transform_call_to_unsafe_label = 不安全！不可以！！！
+ mir_transform_call_to_unsafe_note = consult the function's documentation for information on how to avoid undefined behavior
+ mir_transform_const_defined_here = `const` item defined here
+ 
+-mir_transform_const_modify = attempting to modify a `const` item
++mir_transform_const_modify = 是不是又想把一些奇奇怪怪的东西写入常量值
+     .note = each usage of a `const` item creates a new temporary; the original `const` item will not be modified
+ 
+-mir_transform_const_mut_borrow = taking a mutable reference to a `const` item
++mir_transform_const_mut_borrow = 是不是又想把一些奇奇怪怪的东西写入常量值
+     .note = each usage of a `const` item creates a new temporary
+     .note2 = the mutable reference will refer to this temporary, not the original `const` item
+     .note3 = mutable reference created due to call to this method
+ 
+ mir_transform_const_ptr2int_label = cast of pointer to int
+ mir_transform_const_ptr2int_note = casting pointers to integers in constants
+-mir_transform_deref_ptr_label = dereference of raw pointer
++mir_transform_deref_ptr_label = 解引用原始指针
+ mir_transform_deref_ptr_note = raw pointers may be null, dangling or unaligned; they can violate aliasing rules and cause data races: all of these are undefined behavior
+ mir_transform_ffi_unwind_call = call to {$foreign ->
+     [true] foreign function
+@@ -67,10 +67,10 @@ mir_transform_unsafe_op_in_unsafe_fn = {$details} is unsafe and requires unsafe
+     .suggestion = consider wrapping the function body in an unsafe block
+     .note = an unsafe function restricts its caller, but its body is safe by default
+ 
+-mir_transform_unused_unsafe = unnecessary `unsafe` block
++mir_transform_unused_unsafe = `unsafe` 块是什么呀... 怎么有两层...
+     .label = because it's nested under this `unsafe` block
+ 
+-mir_transform_use_of_asm_label = use of inline assembly
++mir_transform_use_of_asm_label = 内联汇编喵
+ mir_transform_use_of_asm_note = inline assembly is entirely unchecked and can cause undefined behavior
+ mir_transform_use_of_extern_static_label = use of extern static
+ mir_transform_use_of_extern_static_note = extern statics are not controlled by the Rust type system: invalid data, aliasing violations or data races will cause undefined behavior
+diff --git a/compiler/rustc_monomorphize/messages.ftl b/compiler/rustc_monomorphize/messages.ftl
+index e2787585..8f66a583 100644
+--- a/compiler/rustc_monomorphize/messages.ftl
++++ b/compiler/rustc_monomorphize/messages.ftl
+@@ -1,11 +1,11 @@
+ monomorphize_consider_type_length_limit =
+-    consider adding a `#![type_length_limit="{$type_length}"]` attribute to your crate
++    考虑向您的 crate 添加 `#![type_length_limit="{$type_length}"]` 属性
+ 
+ monomorphize_couldnt_dump_mono_stats =
+     unexpected error occurred while dumping monomorphization stats: {$error}
+ 
+ monomorphize_encountered_error_while_instantiating =
+-    the above error was encountered while instantiating `{$formatted_item}`
++    上面的错误都是因为 `{$formatted_item}` 喵
+ 
+ monomorphize_large_assignments =
+     moving {$size} bytes
+diff --git a/compiler/rustc_parse/messages.ftl b/compiler/rustc_parse/messages.ftl
+index 363b8f4b..17f3b6e8 100644
+--- a/compiler/rustc_parse/messages.ftl
++++ b/compiler/rustc_parse/messages.ftl
+@@ -1,4 +1,4 @@
+-parse_add_paren = try adding parentheses
++parse_add_paren = 试试添加括号
+ 
+ parse_ambiguous_missing_keyword_for_item_definition = missing `fn` or `struct` for function or struct definition
+     .suggestion = if you meant to call a macro, try
+@@ -7,7 +7,7 @@ parse_ambiguous_missing_keyword_for_item_definition = missing `fn` or `struct` f
+ parse_ambiguous_range_pattern = the range pattern here has ambiguous interpretation
+     .suggestion = add parentheses to clarify the precedence
+ 
+-parse_array_brackets_instead_of_braces = this is a block expression, not an array
++parse_array_brackets_instead_of_braces = 这是块表达式，不是数组
+     .suggestion = to make an array, use square brackets instead of curly braces
+ 
+ parse_assignment_else_not_allowed = <assignment> ... else {"{"} ... {"}"} is not allowed
+@@ -20,10 +20,10 @@ parse_associated_static_item_not_allowed = associated `static` items are not all
+ 
+ parse_async_block_in_2015 = `async` blocks are only allowed in Rust 2018 or later
+ 
+-parse_async_fn_in_2015 = `async fn` is not permitted in Rust 2015
+-    .label = to use `async fn`, switch to Rust 2018 or later
++parse_async_fn_in_2015 = `async fn` 是... 是什么？Rust 2015 不知道诶
++    .label = 什么年代了还在用 Rust 2015，大哥哥真是杂鱼呢～
+ 
+-parse_async_move_block_in_2015 = `async move` blocks are only allowed in Rust 2018 or later
++parse_async_move_block_in_2015 = `async move` 是... 是什么？Rust 2015 不知道诶
+ 
+ parse_async_move_order_incorrect = the order of `move` and `async` is incorrect
+     .suggestion = try switching the order
+@@ -253,13 +253,13 @@ parse_float_literal_requires_integer_part = float literals must have an integer
+ 
+ parse_float_literal_unsupported_base = {$base} float literal is not supported
+ 
+-parse_fn_pointer_cannot_be_async = an `fn` pointer type cannot be `async`
+-    .label = `async` because of this
+-    .suggestion = remove the `async` qualifier
++parse_fn_pointer_cannot_be_async = 才没有什么 `async fn() -> ()` 呢！
++    .label = `async` 喵
++    .suggestion = 删掉 `async` 喵
+ 
+-parse_fn_pointer_cannot_be_const = an `fn` pointer type cannot be `const`
+-    .label = `const` because of this
+-    .suggestion = remove the `const` qualifier
++parse_fn_pointer_cannot_be_const = 才没有什么 `const fn() -> ()` 呢！
++    .label = `const` 喵
++    .suggestion = 删掉 `const` 喵
+ 
+ parse_fn_ptr_with_generics = function pointer types may not have generic parameters
+     .suggestion = consider moving the lifetime {$arity ->
+@@ -330,11 +330,11 @@ parse_incorrect_semicolon =
+     .help = {$name} declarations are not followed by a semicolon
+ 
+ parse_incorrect_use_of_await =
+-    incorrect use of `await`
++    笨蛋，`await` 才不是什么函数呢～
+     .parentheses_suggestion = `await` is not a method call, remove the parentheses
+     .postfix_suggestion = `await` is a postfix operation
+ 
+-parse_incorrect_visibility_restriction = incorrect visibility restriction
++parse_incorrect_visibility_restriction = pub 什么，不认识喵
+     .help = some possible visibility restrictions are:
+             `pub(crate)`: visible only on the current crate
+             `pub(super)`: visible only in the current module's parent
+@@ -596,15 +596,15 @@ parse_no_brace_unicode_escape = incorrect unicode escape sequence
+ 
+ parse_no_digits_literal = no valid digits found for number
+ 
+-parse_non_string_abi_literal = non-string ABI literal
+-    .suggestion = specify the ABI with a string literal
++parse_non_string_abi_literal = 非字符串 ABI 字面量
++    .suggestion = 用字符串字面量指定 ABI
+ 
+-parse_nonterminal_expected_ident = expected ident, found `{$token}`
++parse_nonterminal_expected_ident = 需要 ident, found `{$token}`
+ parse_nonterminal_expected_item_keyword = expected an item keyword
+ parse_nonterminal_expected_lifetime = expected a lifetime, found `{$token}`
+ 
+-parse_nonterminal_expected_statement = expected a statement
+-parse_not_supported = not supported
++parse_nonterminal_expected_statement = 需要语句
++parse_not_supported = 不支持
+ 
+ parse_note_edition_guide = for more on editions, read https://doc.rust-lang.org/edition-guide
+ 
+diff --git a/compiler/rustc_passes/messages.ftl b/compiler/rustc_passes/messages.ftl
+index be50aad1..9d090740 100644
+--- a/compiler/rustc_passes/messages.ftl
++++ b/compiler/rustc_passes/messages.ftl
+@@ -1,13 +1,13 @@
+ -passes_previously_accepted =
+-    this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
++    仅此一次，以后再也不可以了！！！
+ 
+ -passes_see_issue =
+-    see issue #{$issue} <https://github.com/rust-lang/rust/issues/{$issue}> for more information
++    看看 #{$issue} <https://github.com/rust-lang/rust/issues/{$issue}> 喵
+ 
+ passes_abi_invalid_attribute =
+-    `#[rustc_abi]` can only be applied to function items, type aliases, and associated functions
++    `#[rustc_abi]` 只能被应用于函数项、类型别名和关联函数
+ passes_abi_ne =
+-    ABIs are not compatible
++    ABI 不兼容
+     left ABI = {$left}
+     right ABI = {$right}
+ passes_abi_of =
+@@ -141,7 +141,7 @@ passes_debug_visualizer_placement =
+     attribute should be applied to a module
+ 
+ passes_debug_visualizer_unreadable =
+-    couldn't read {$file}: {$error}
++    无法读取 {$file}: {$error}
+ 
+ passes_deprecated =
+     attribute is ignored here
+@@ -200,7 +200,7 @@ passes_doc_inline_conflict =
+     .help = remove one of the conflicting attributes
+ 
+ passes_doc_inline_conflict_first =
+-    this attribute...
++    此属性...
+ 
+ passes_doc_inline_conflict_second =
+     {"."}..conflicts with this attribute
+@@ -212,7 +212,7 @@ passes_doc_inline_only_use =
+     .note = read <https://doc.rust-lang.org/nightly/rustdoc/the-doc-attribute.html#inline-and-no_inline> for more information
+ 
+ passes_doc_invalid =
+-    invalid `doc` attribute
++    非法 `doc` 属性
+ 
+ passes_doc_keyword_empty_mod =
+     `#[doc(keyword = "...")]` should be used on empty modules
+@@ -240,7 +240,7 @@ passes_doc_masked_only_extern_crate =
+ passes_doc_test_literal = `#![doc(test(...)]` does not take a literal
+ 
+ passes_doc_test_takes_list =
+-    `#[doc(test(...)]` takes a list of attributes
++    `#[doc(test(...))]` 需要一组属性
+ 
+ passes_doc_test_unknown =
+     unknown `doc(test)` attribute `{$path}`
+@@ -263,7 +263,7 @@ passes_duplicate_diagnostic_item_in_crate =
+     .note = the diagnostic item is first defined in crate `{$orig_crate_name}`.
+ 
+ passes_duplicate_feature_err =
+-    the feature `{$feature}` has already been declared
++    啊？`{$feature}` 已经有了哦～
+ 
+ passes_duplicate_lang_item =
+     found duplicate lang item `{$lang_item_name}`
+@@ -444,10 +444,10 @@ passes_link_section =
+     .label = not a function or static
+ 
+ passes_macro_export =
+-    `#[macro_export]` only has an effect on macro definitions
++    `#[macro_export]` 只对宏定义生效，笨蛋！
+ 
+ passes_macro_export_on_decl_macro =
+-    `#[macro_export]` has no effect on declarative macro definitions
++    都用 Macros 2.0 了，怎么还在用 `#[macro_export]`～
+     .note = declarative macros follow the same exporting rules as regular items
+ 
+ passes_macro_use =
+@@ -517,8 +517,8 @@ passes_no_link =
+     .label = not an `extern crate` item
+ 
+ passes_no_main_function =
+-    `main` function not found in crate `{$crate_name}`
+-    .here_is_main = here is a function named `main`
++    没有 `main` 函数，不行喵
++    .here_is_main = `main`，嘻嘻
+     .one_or_more_possible_main = you have one or more functions named `main` not defined at the crate level
+     .consider_moving_main = consider moving the `main` function definitions
+     .main_must_be_defined_at_crate = the main function must be defined at the crate level{$has_filename ->
+@@ -528,7 +528,7 @@ passes_no_main_function =
+     .consider_adding_main_to_file = consider adding a `main` function to `{$filename}`
+     .consider_adding_main_at_crate = consider adding a `main` function at the crate level
+     .teach_note = If you don't know the basics of Rust, you can go look to the Rust Book to get started: https://doc.rust-lang.org/book/
+-    .non_function_main = non-function item at `crate::main` is found
++    .non_function_main = `crate::main`，这是... 看不懂！！！下次不许这样了，哼！！！
+ 
+ passes_no_mangle =
+     attribute should be applied to a free function, impl method or static
+@@ -651,8 +651,8 @@ passes_rustc_std_internal_symbol =
+ passes_should_be_applied_to_fn =
+     attribute should be applied to a function definition
+     .label = {$on_crate ->
+-        [true] cannot be applied to crates
+-        *[false] not a function definition
++        [true] 不能应用于 crate
++        *[false] 不是函数定义
+     }
+ 
+ passes_should_be_applied_to_static =
+@@ -772,16 +772,16 @@ passes_unused_var_remove_field_suggestion = try removing the field
+ 
+ passes_unused_variable_args_in_macro = `{$name}` is captured in macro and introduced a unused variable
+ 
+-passes_unused_variable_try_ignore = unused variable: `{$name}`
++passes_unused_variable_try_ignore = 未使用的变量 `{$name}`，不要丢下人家啊呜呜呜～
+     .suggestion = try ignoring the field
+ 
+-passes_unused_variable_try_prefix = unused variable: `{$name}`
++passes_unused_variable_try_prefix = 未使用的变量 `{$name}`，不要丢下人家啊呜呜呜～
+     .label = unused variable
+     .suggestion = if this is intentional, prefix it with an underscore
+ 
+ 
+ passes_used_compiler_linker =
+-    `used(compiler)` and `used(linker)` can't be used together
++    `used(compiler)` 和 `used(linker)` 不能同时使用
+ 
+ passes_used_static =
+     attribute must be applied to a `static` variable
+diff --git a/compiler/rustc_pattern_analysis/messages.ftl b/compiler/rustc_pattern_analysis/messages.ftl
+index 827928f9..42d34c94 100644
+--- a/compiler/rustc_pattern_analysis/messages.ftl
++++ b/compiler/rustc_pattern_analysis/messages.ftl
+@@ -4,7 +4,7 @@ pattern_analysis_non_exhaustive_omitted_pattern = some variants are not matched
+ 
+ pattern_analysis_non_exhaustive_omitted_pattern_lint_on_arm = the lint level must be set on the whole match
+     .help = it no longer has any effect to set the lint level on an individual match arm
+-    .label = remove this attribute
++    .label = 删除此属性
+     .suggestion = set the lint level on the whole match
+ 
+ pattern_analysis_overlapping_range_endpoints = multiple patterns overlap on their endpoints
+diff --git a/compiler/rustc_privacy/messages.ftl b/compiler/rustc_privacy/messages.ftl
+index 7785f1a7..ddb4009c 100644
+--- a/compiler/rustc_privacy/messages.ftl
++++ b/compiler/rustc_privacy/messages.ftl
+@@ -1,6 +1,6 @@
+ privacy_field_is_private = field `{$field_name}` of {$variant_descr} `{$def_path_str}` is private
+-privacy_field_is_private_is_update_syntax_label = field `{$field_name}` is private
+-privacy_field_is_private_label = private field
++privacy_field_is_private_is_update_syntax_label = 字段 `{$field_name}` 不可以哦！
++privacy_field_is_private_label = 私有字段
+ 
+ privacy_from_private_dep_in_public_interface =
+     {$kind} `{$descr}` from private dependency '{$krate}' in public interface
+@@ -9,7 +9,7 @@ privacy_in_public_interface = {$vis_descr} {$kind} `{$descr}` in public interfac
+     .label = can't leak {$vis_descr} {$kind}
+     .visibility_label = `{$descr}` declared as {$vis_descr}
+ 
+-privacy_item_is_private = {$kind} `{$descr}` is private
++privacy_item_is_private = {$kind} `{$descr}` 不可以哦！
+     .label = private {$kind}
+ 
+ privacy_private_interface_or_bounds_lint = {$ty_kind} `{$ty_descr}` is more private than the item `{$item_descr}`
+@@ -21,5 +21,5 @@ privacy_report_effective_visibility = {$descr}
+ privacy_unnameable_types_lint = {$kind} `{$descr}` is reachable but cannot be named
+     .label = reachable at visibility `{$reachable_vis}`, but can only be named at visibility `{$reexported_vis}`
+ 
+-privacy_unnamed_item_is_private = {$kind} is private
++privacy_unnamed_item_is_private = {$kind} 不可以哦！
+     .label = private {$kind}
+diff --git a/compiler/rustc_query_system/messages.ftl b/compiler/rustc_query_system/messages.ftl
+index d7ab7557..cd6a7095 100644
+--- a/compiler/rustc_query_system/messages.ftl
++++ b/compiler/rustc_query_system/messages.ftl
+@@ -1,7 +1,7 @@
+ query_system_cycle = cycle detected when {$stack_bottom}
+     .note = see https://rustc-dev-guide.rust-lang.org/overview.html#queries and https://rustc-dev-guide.rust-lang.org/query.html for more information
+ 
+-query_system_cycle_recursive_trait_alias = trait aliases cannot be recursive
++query_system_cycle_recursive_trait_alias = trait 别名不能为递归
+ 
+ query_system_cycle_recursive_ty_alias = type aliases cannot be recursive
+ query_system_cycle_recursive_ty_alias_help1 = consider using a struct, enum, or union instead to break the cycle
+diff --git a/compiler/rustc_resolve/messages.ftl b/compiler/rustc_resolve/messages.ftl
+index 3f8df16e..24206e0f 100644
+--- a/compiler/rustc_resolve/messages.ftl
++++ b/compiler/rustc_resolve/messages.ftl
+@@ -1,4 +1,4 @@
+-resolve_accessible_unsure = not sure whether the path is accessible or not
++resolve_accessible_unsure = 可不可以？可不可以？不知道...
+     .note = the type may have associated items, but we are currently not checking them
+ 
+ resolve_add_as_non_derive =
+@@ -6,7 +6,7 @@ resolve_add_as_non_derive =
+     `#[{$macro_path}]`
+ 
+ resolve_added_macro_use =
+-    have you added the `#[macro_use]` on the module/import?
++    听说有个 mod/import 的 `#[macro_use]`？这是用来干什么的...
+ 
+ resolve_ampersand_used_without_explicit_lifetime_name =
+     `&` without an explicit lifetime name cannot be used here
+@@ -19,13 +19,13 @@ resolve_associated_const_with_similar_name_exists =
+     there is an associated constant with a similar name
+ 
+ resolve_associated_fn_with_similar_name_exists =
+-    there is an associated function with a similar name
++    有一个名字类似的关联函数
+ 
+ resolve_associated_type_with_similar_name_exists =
+     there is an associated type with a similar name
+ 
+ resolve_attempt_to_use_non_constant_value_in_constant =
+-    attempt to use a non-constant value in a constant
++    在 const 上下文里怎么可以使用非 const 值啊喂！大哥哥不愧是杂鱼呢～
+ 
+ resolve_attempt_to_use_non_constant_value_in_constant_label_with_suggestion =
+     non-constant value
+diff --git a/compiler/rustc_session/messages.ftl b/compiler/rustc_session/messages.ftl
+index f2e646c7..9c4cd481 100644
+--- a/compiler/rustc_session/messages.ftl
++++ b/compiler/rustc_session/messages.ftl
+@@ -1,5 +1,5 @@
+-session_binary_float_literal_not_supported = binary float literal is not supported
+-session_branch_protection_requires_aarch64 = `-Zbranch-protection` is only supported on aarch64
++session_binary_float_literal_not_supported = 不允许二进制浮点数字面量
++session_branch_protection_requires_aarch64 = `-Zbranch-protection` 仅在 aarch64 架构上被支持
+ 
+ session_cannot_enable_crt_static_linux = sanitizer is incompatible with statically linked libc, disable it using `-C target-feature=-crt-static`
+ 
+diff --git a/compiler/rustc_trait_selection/messages.ftl b/compiler/rustc_trait_selection/messages.ftl
+index 41db8059..a4692627 100644
+--- a/compiler/rustc_trait_selection/messages.ftl
++++ b/compiler/rustc_trait_selection/messages.ftl
+@@ -8,7 +8,7 @@ trait_selection_adjust_signature_remove_borrow = consider adjusting the signatur
+         *[other] arguments
+     }
+ 
+-trait_selection_closure_fn_mut_label = closure is `FnMut` because it mutates the variable `{$place}` here
++trait_selection_closure_fn_mut_label = 闭包是 `FnMut` 因为修改了这里的 `{$place}` 变量
+ 
+ trait_selection_closure_fn_once_label = closure is `FnOnce` because it moves the variable `{$place}` out of its environment
+ 
+diff --git a/compiler/rustc_ty_utils/messages.ftl b/compiler/rustc_ty_utils/messages.ftl
+index ae795ef2..0dceee93 100644
+--- a/compiler/rustc_ty_utils/messages.ftl
++++ b/compiler/rustc_ty_utils/messages.ftl
+@@ -2,17 +2,17 @@ ty_utils_address_and_deref_not_supported = dereferencing or taking the address i
+ 
+ ty_utils_adt_not_supported = struct/enum construction is not supported in generic constants
+ 
+-ty_utils_array_not_supported = array construction is not supported in generic constants
++ty_utils_array_not_supported = 泛型常量里面、数组什么的... 才不可以呢！
+ 
+-ty_utils_assign_not_supported = assignment is not supported in generic constants
++ty_utils_assign_not_supported = 泛型常量里面、分派什么的... 才不可以呢！
+ 
+-ty_utils_binary_not_supported = unsupported binary operation in generic constants
++ty_utils_binary_not_supported = 奇怪的位运算，不可以不可以！
+ 
+-ty_utils_block_not_supported = blocks are not supported in generic constants
++ty_utils_block_not_supported = 泛型常量里面、代码块什么的... 才不可以呢！
+ 
+-ty_utils_borrow_not_supported = borrowing is not supported in generic constants
++ty_utils_borrow_not_supported = 泛型常量里面、借用什么的... 才不可以呢！
+ 
+-ty_utils_box_not_supported = allocations are not allowed in generic constants
++ty_utils_box_not_supported = 泛型常量里面、内存分配什么的... 才不可以呢！
+ 
+ ty_utils_closure_and_return_not_supported = closures and function keywords are not supported in generic constants
+ 
+-- 
+2.39.3 (Apple Git-145)
+
