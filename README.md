@@ -2,6 +2,7 @@
 This repository stores my projects that are currently in experimental stage, or little scripts that are used for once.
 
 ## List of Active Experiments
+ - [`kawaii-rustc`](experiments/kawaii-rustc): rustc 也要变得可爱！！！
  - [`txtfmt`](experiments/txtfmt): A simple formatter for plain text.
 
 ## List of Past Experiments
