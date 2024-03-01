@@ -48,13 +48,12 @@ fn ask(hint: &str) -> std::io::Result<String> {
     loop {
         print!("{hint}");
         std::io::Write::flush(&mut std::io::stdout())?;
-        match std::io::BufRead::read_line(&mut lock, &mut buf) {
-            Ok(_) => break Ok(buf.trim().to_owned()),
-            Err(err) => match err.kind() {
-                std::io::ErrorKind::UnexpectedEof => continue,
-                _ => break Err(err),
-            },
-        };
+        std::io::BufRead::read_line(&mut lock, &mut buf)?;
+        if !buf.ends_with("\n") {
+            println!();
+            continue;
+        }
+        break Ok(buf.trim().to_owned());
     }
 }
 
