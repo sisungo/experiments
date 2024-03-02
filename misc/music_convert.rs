@@ -100,9 +100,9 @@ fn main() -> Result<(), StdError> {
 
     // Delete files before exit.
     if let Some(x) = &cover_path {
-        std::fs::remove_file(x)?;
+        std::fs::remove_file(x).ok();
     }
-    std::fs::remove_file(origin_input_path)?;
+    std::fs::remove_file(origin_input_path).ok();
     std::fs::remove_file(input_path).ok(); // Preprocessed input file path may be same as origin, so errors are ignored.
     std::env::set_current_dir("/")?; // At least we have access to root directory.
     std::fs::remove_dir_all(MUSIC_CONVERT_WORK_DIR)?;
