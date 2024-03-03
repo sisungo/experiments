@@ -3,8 +3,8 @@ include!("shared/rust_common.h.rs");
 use std::path::{Path, PathBuf};
 
 // Working Directories
-const MUSIC_LIBRARY_DIR: &str = "/Volumes/sisungo/Music";
-const MUSIC_CONVERT_WORK_DIR: &str = "/Volumes/sisungo/Downloads/tmp.musicqueue/tmp.1111";
+const MUSIC_LIBRARY_DIR: &str = "/Volumes/Roaming/Music";
+const MUSIC_CONVERT_WORK_DIR: &str = "/Volumes/Roaming/Downloads/tmp.musicqueue/tmp.1111";
 
 // Parameters
 const VALID_BITRATES: &[&str] = &["32k", "48k", "64k", "96k", "128k", "192k", "256k", "320k"];
