@@ -15,7 +15,7 @@ cd ../
 
 # Navigate to `/misc`
 cd misc
-rm -f music_convert
+clean_rust_projects toolkit music_convert
 cd ../
 
 # Navigate to `/experiments`
