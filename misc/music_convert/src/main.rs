@@ -1,5 +1,5 @@
-use toolkit::*;
 use std::path::{Path, PathBuf};
+use toolkit::*;
 
 // Working Directories
 const MUSIC_LIBRARY_DIR: &str = "/Volumes/Roaming/Music";
