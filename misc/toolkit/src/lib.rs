@@ -53,6 +53,15 @@ pub fn ask(hint: &str) -> std::io::Result<String> {
     }
 }
 
+pub fn ask_nullable(hint: &str) -> std::io::Result<Option<String>> {
+    let asked = ask(hint)?;
+    if asked == "(null)" {
+        return Ok(None);
+    }
+
+    Ok(Some(asked))
+}
+
 pub fn ask_until<F: FnMut(&str) -> bool>(hint: &str, mut validator: F) -> std::io::Result<String> {
     loop {
         let asked = ask(hint)?;

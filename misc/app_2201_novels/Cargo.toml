@@ -1,0 +1,10 @@
+[package]
+name = "app_2201_novels"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4"
+tokio = { version = "1", features = ["full"] }
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
+toolkit = { path = "../toolkit" }
