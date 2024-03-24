@@ -24,6 +24,7 @@ async fn main() {
         "add_single" => add_single(&mut client).await,
         "get_novel" => get_novel(&mut client).await,
         "ls_novel" => ls_novel(&client).await,
+        "del_novel" => del_novel(&mut client).await,
         _ => panic!("unknown action"),
     }
 }
@@ -40,6 +41,23 @@ async fn ls_novel(client: &Client) {
             item.get::<'_, _, String>("title")
         );
     }
+}
+
+async fn del_novel(client: &mut Client) {
+    let trans = client.transaction().await.unwrap();
+    trans
+        .execute("LOCK TABLE novels IN EXCLUSIVE MODE", &[])
+        .await
+        .unwrap();
+    trans
+        .execute("LOCK TABLE novel_toc IN EXCLUSIVE MODE", &[])
+        .await
+        .unwrap();
+    let id = ask("Novel ID: ").unwrap().parse::<i64>().unwrap();
+    trans
+        .execute("CALL novel_delete($1)", &[&id])
+        .await
+        .unwrap();
 }
 
 async fn add_single(client: &mut Client) {
