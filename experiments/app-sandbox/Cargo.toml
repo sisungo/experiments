@@ -1,0 +1,8 @@
+[package]
+name = "app-sandbox"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4", features = ["derive"]}
+landlock = "0.3"

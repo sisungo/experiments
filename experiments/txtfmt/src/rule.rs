@@ -588,6 +588,7 @@ fn tokenize(s: &str) -> Result<Vec<Token>, Error> {
                     b'r' => this.push(b'\r'),
                     b'"' => this.push(b'"'),
                     b'\\' => this.push(b'\\'),
+                    b'0' => this.push(b'\0'),
                     _ => return Err(Error::UnknownEscape(b as char)),
                 };
                 in_escape = false;
