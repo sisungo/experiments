@@ -15,7 +15,7 @@ cd ../
 
 # Navigate to `/misc`
 cd misc
-clean_rust_projects toolkit music_convert
+clean_rust_projects toolkit music_convert app_2201_novels web_proxy
 cd ../
 
 # Navigate to `/experiments`
