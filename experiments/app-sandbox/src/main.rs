@@ -11,6 +11,7 @@ struct Cmdline {
 
 fn main() -> eyre::Result<()> {
     use clap::Parser;
+    use landlock::{AccessFs, BitFlags, RulesetAttr};
     use std::os::unix::process::CommandExt;
 
     let cmdline = Cmdline::parse();
@@ -19,7 +20,9 @@ fn main() -> eyre::Result<()> {
     }
     let rule_s = std::fs::read_to_string(&cmdline.rule)?;
 
-    let mut ruleset = landlock::Ruleset::default().create()?;
+    let mut ruleset = landlock::Ruleset::default()
+        .handle_access(BitFlags::<AccessFs>::all())?
+        .create()?;
 
     rule::parse_to(&mut ruleset, &cmdline.rule, &rule_s)?;
 
