@@ -188,7 +188,7 @@ async fn add_novel_chapter(client: &mut Client) {
     let last = chapter_nos
         .last()
         .map(|x| x.get::<'_, _, i32>("chapter_no"))
-        .unwrap_or(1);
+        .unwrap_or(0) + 1;
 
     let chapter_name = ask("Chapter Name: ").unwrap();
     let data_file = ask("Data File: ").unwrap();
