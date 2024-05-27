@@ -1,0 +1,7 @@
+[package]
+name = "fat32x"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fuse-backend-rs = "0.12"

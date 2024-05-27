@@ -5,6 +5,8 @@ This repository stores my projects that are currently in experimental stage, or 
  - [`kawaii-rustc`](experiments/kawaii-rustc): rustc 也要变得可爱！！！
  - [`txtfmt`](experiments/txtfmt): A simple formatter for plain text.
  - [`app-sandbox`](experiments/app-sandbox/): An app sandboxing tool for Linux, built on the top of Landlock.
+ - [`fat32x`](experiments/fat32x/): FUSE filesystem built on the top of FAT32, which wraps the FAT32 filesystem to support
+ large files \(> 4GB\) and soft links, Unix permissions...
 
 ## List of Past Experiments
  - [`randvoca`](archive/randvoca): A small tool to generate random vocabulary list for an artifact language.

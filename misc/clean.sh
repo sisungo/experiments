@@ -20,7 +20,7 @@ cd ../
 
 # Navigate to `/experiments`
 cd experiments
-clean_rust_projects txtfmt app-sandbox
+clean_rust_projects txtfmt app-sandbox fat32x
 cd ../
 
 # Navigate to `/archive`
