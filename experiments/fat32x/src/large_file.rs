@@ -1,5 +1,5 @@
 use std::{
-    fs::File,
+    fs::{read_dir, File},
     io::{ErrorKind, Read, Seek, Write},
     path::PathBuf,
 };
@@ -12,6 +12,55 @@ pub struct LargeFile {
     write_access: bool,
     append_mode: bool,
     max_size: u64,
+}
+impl LargeFile {
+    pub fn new(
+        underlying_dir: PathBuf,
+        read_access: bool,
+        write_access: bool,
+        append_mode: bool,
+        max_size: u64,
+        create: bool,
+    ) -> std::io::Result<Self> {
+        if create {
+            std::fs::create_dir_all(&underlying_dir)?;
+        }
+
+        let current_file = File::options()
+            .create(create)
+            .write(write_access)
+            .read(read_access)
+            .append(append_mode)
+            .open(underlying_dir.join("0"))?;
+
+        Ok(Self {
+            underlying_dir,
+            current_pos: 0,
+            current_file,
+            read_access,
+            write_access,
+            append_mode,
+            max_size,
+        })
+    }
+
+    pub fn len(&self) -> std::io::Result<u64> {
+        Ok(std::fs::read_dir(&self.underlying_dir)?
+            .map(|x| {
+                x.ok()
+                    .filter(|z| {
+                        String::from_utf8(z.file_name().into_encoded_bytes())
+                            .map(|k| k.parse::<u64>().ok())
+                            .ok()
+                            .flatten()
+                            .is_some()
+                    })
+                    .map(|x| x.metadata())
+            })
+            .map(|x| x.and_then(|y| y.ok()).map(|z| z.len()))
+            .filter_map(|x| x)
+            .sum())
+    }
 }
 impl Read for LargeFile {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
@@ -81,7 +130,6 @@ impl Seek for LargeFile {
 }
 
 #[test]
-#[ignore]
 fn test_read() {
     let mut lf = LargeFile {
         underlying_dir: "./test".into(),
