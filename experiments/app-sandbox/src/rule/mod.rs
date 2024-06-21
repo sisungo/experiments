@@ -1,7 +1,9 @@
 mod lexer;
 
 use eyre::OptionExt;
-use landlock::{AccessFs, BitFlags, PathBeneath, PathFd, RulesetCreated, RulesetCreatedAttr};
+use landlock::{
+    AccessFs, AccessNet, BitFlags, NetPort, PathBeneath, PathFd, RulesetCreated, RulesetCreatedAttr,
+};
 use std::path::Path;
 
 use self::lexer::{Token, TokenKind};
@@ -75,6 +77,29 @@ fn parse_allow(ruleset: &mut RulesetCreated, s: &[Token]) -> eyre::Result<()> {
                     }
 
                     ruleset.add_rule(PathBeneath::new(PathFd::new(path)?, access_fs))?;
+                }
+                _ => return Err(eyre::eyre!("")),
+            },
+            "port" => match &*object.get(1).ok_or_eyre("")?.kind {
+                TokenKind::Ident(port) => {
+                    let mut access_net: BitFlags<AccessNet> = BitFlags::empty();
+
+                    for action in actions {
+                        if action.len() != 1 {
+                            return Err(eyre::eyre!(""));
+                        }
+
+                        match &*action.first().unwrap().kind {
+                            TokenKind::Ident(ident) => match ident.as_str() {
+                                "bind_tcp" => access_net |= AccessNet::BindTcp,
+                                "connect_tcp" => access_net |= AccessNet::ConnectTcp,
+                                _ => return Err(eyre::eyre!("")),
+                            },
+                            _ => return Err(eyre::eyre!("")),
+                        }
+                    }
+
+                    ruleset.add_rule(NetPort::new(port.parse()?, access_net))?;
                 }
                 _ => return Err(eyre::eyre!("")),
             },

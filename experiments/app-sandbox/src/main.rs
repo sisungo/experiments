@@ -5,13 +5,19 @@ struct Cmdline {
     #[arg(short, long)]
     rule: std::path::PathBuf,
 
+    #[arg(long)]
+    net: bool,
+
+    #[arg(long)]
+    fs: bool,
+
     #[arg(last = true)]
     command: Vec<String>,
 }
 
 fn main() -> eyre::Result<()> {
     use clap::Parser;
-    use landlock::{AccessFs, BitFlags, RulesetAttr};
+    use landlock::{AccessFs, AccessNet, BitFlags, RulesetAttr};
     use std::os::unix::process::CommandExt;
 
     let cmdline = Cmdline::parse();
@@ -20,9 +26,16 @@ fn main() -> eyre::Result<()> {
     }
     let rule_s = std::fs::read_to_string(&cmdline.rule)?;
 
-    let mut ruleset = landlock::Ruleset::default()
-        .handle_access(BitFlags::<AccessFs>::all())?
-        .create()?;
+    let mut ruleset = landlock::Ruleset::default();
+
+    if cmdline.net {
+        ruleset = ruleset.handle_access(BitFlags::<AccessNet>::all())?;
+    }
+    if cmdline.fs {
+        ruleset = ruleset.handle_access(BitFlags::<AccessFs>::all())?;
+    }
+
+    let mut ruleset = ruleset.create()?;
 
     rule::parse_to(&mut ruleset, &cmdline.rule, &rule_s)?;
 
