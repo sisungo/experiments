@@ -1,3 +1,5 @@
+use landlock::Access;
+
 mod rule;
 
 #[derive(clap::Parser)]
@@ -32,7 +34,7 @@ fn main() -> eyre::Result<()> {
         ruleset = ruleset.handle_access(BitFlags::<AccessNet>::all())?;
     }
     if cmdline.fs {
-        ruleset = ruleset.handle_access(BitFlags::<AccessFs>::all())?;
+        ruleset = ruleset.handle_access(AccessFs::from_all(landlock::ABI::V4))?;
     }
 
     let mut ruleset = ruleset.create()?;
