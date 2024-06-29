@@ -15,12 +15,12 @@ cd ../
 
 # Navigate to `/misc`
 cd misc
-clean_rust_projects toolkit music_convert app_2201_novels web_proxy loginloop
+clean_rust_projects toolkit music_convert
 cd ../
 
 # Navigate to `/experiments`
 cd experiments
-clean_rust_projects txtfmt app-sandbox fat32x
+clean_rust_projects txtfmt app-sandbox fat32x wav2bmp bmp2wav fat32x
 cd ../
 
 # Navigate to `/archive`
