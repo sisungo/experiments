@@ -99,7 +99,9 @@ fn main() -> Result<(), StdError> {
 
     // Delete files before exit.
     if let Some(x) = &cover_path {
-        std::fs::remove_file(x).ok();
+        if !x.ends_with(".opus") {
+            std::fs::remove_file(x).ok();
+        }
     }
     std::fs::remove_file(origin_input_path).ok();
     std::fs::remove_file(input_path).ok(); // Preprocessed input file path may be same as origin, so errors are ignored.
