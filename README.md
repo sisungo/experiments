@@ -2,6 +2,8 @@
 This repository stores my projects that are currently in experimental stage, or little scripts that are used for once.
 
 ## List of Active Experiments
+ - [`trustedcell`](experiments/trustedcell): Desktop-orinted, interactive LSM that implements application-based dynamic
+ access control.
  - [`kawaii-rustc`](experiments/kawaii-rustc): rustc 也要变得可爱！！！
  - [`txtfmt`](experiments/txtfmt): A simple formatter for plain text.
  - [`app-sandbox`](experiments/app-sandbox/): An app sandboxing tool for Linux, built on the top of Landlock.
