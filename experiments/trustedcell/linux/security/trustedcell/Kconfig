@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config SECURITY_TRUSTEDCELL
+        bool "TrustedCell support"
+        depends on SECURITY
+        select SECURITYFS
+        select SECURITY_PATH
