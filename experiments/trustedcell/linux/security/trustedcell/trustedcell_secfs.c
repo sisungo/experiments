@@ -65,13 +65,17 @@ static ssize_t secfs_me_write(struct file *file, const char __user *ubuf,
   }
   struct trustedcell_id *current_cell_id = trustedcell_get_current_cell_id();
   if (current_cell_id) {
-    status = trustedcell_invoke_host(current_uid(), current_cell_id,
+    status = trustedcell_decide(current_uid(), current_cell_id,
         "~trustedcell", cell_id_str, "trustedcell.change_cell", GFP_KERNEL);
     if (status < 0 && strcmp(cell_id_str, current_cell_id->str) != 0) {
       goto out_free_cell_id_str;
     }
   }
   cell_id = kmalloc(sizeof(struct trustedcell_id), GFP_KERNEL);
+  if (!cell_id) {
+    status = -ENOMEM;
+    goto out_free_cell_id_str;
+  }
   cell_id->str = cell_id_str;
   trustedcell_init_id(cell_id);
   new_cred = prepare_creds();
@@ -152,6 +156,7 @@ static ssize_t secfs_host_write(struct file *file, const char __user *ubuf,
   int bytes_written;
   int64_t request_id;
   int permit;
+  int cachable;
   char buf[80];
 
   if (count > sizeof(buf) - 1) {
@@ -162,10 +167,10 @@ static ssize_t secfs_host_write(struct file *file, const char __user *ubuf,
   if (bytes_written < 0) {
     return bytes_written;
   }
-  if (sscanf(buf, "%lld %d", &request_id, &permit) < 0) {
+  if (sscanf(buf, "%lld %d %d", &request_id, &permit, &cachable) < 0) {
     return -EINVAL;
   }
-  status = trustedcell_put_response(request_id, permit);
+  status = trustedcell_put_response(request_id, permit, !!cachable);
   return status < 0 ? status : bytes_written;
 }
 

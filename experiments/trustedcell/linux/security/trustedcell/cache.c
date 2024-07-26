@@ -8,6 +8,7 @@
 #include <linux/hashtable.h>
 #include <linux/spinlock.h>
 #include <linux/slab.h>
+#include <linux/siphash.h>
 
 #include "include/cache.h"
 #include "include/util.h"
@@ -19,17 +20,26 @@ struct enforce_cache_node {
   struct rcu_head rcu;
 };
 
-struct trustedcell_enforce_cache {
+struct enforce_cache {
   struct hlist_head slots[TRUSTEDCELL_ENFORCE_CACHE_SLOTS];
   spinlock_t slot_locks[TRUSTEDCELL_ENFORCE_CACHE_SLOTS];
+  hsiphash_key_t hasher_key;
 };
 
-static struct trustedcell_enforce_cache enforce_cache;
+static struct enforce_cache enforce_cache;
 
 static uint32_t enforce_cache_hashfn(
     struct trustedcell_enforce_cache_item item)
 {
-  return 0;
+  uint32_t result = 0;
+  result ^= hsiphash(&item.uid, sizeof(item.uid), &enforce_cache.hasher_key);
+  result ^= hsiphash(item.cell->str, strlen(item.cell->str), &enforce_cache.hasher_key);
+  result ^= hsiphash(item.category, strlen(item.category), &enforce_cache.hasher_key);
+  if (item.category[0] == '~') {
+    result ^= hsiphash(item.owner, strlen(item.owner), &enforce_cache.hasher_key);
+  }
+  result ^= hsiphash(item.action, strlen(item.action), &enforce_cache.hasher_key);
+  return result;
 }
 
 static bool enforce_cache_item_match(

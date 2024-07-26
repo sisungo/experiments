@@ -14,6 +14,9 @@
 
 #include "util.h"
 
+#define TRUSTEDCELL_GRANTED 1
+#define TRUSTEDCELL_CACHABLE 2
+
 struct trustedcell_request {
   int64_t request_id;
   kuid_t uid;
@@ -25,8 +28,9 @@ struct trustedcell_request {
 
 int trustedcell_send_request(struct trustedcell_request request);
 int trustedcell_recv_request(struct trustedcell_request *request);
-int trustedcell_put_response(int64_t request_id, int permit);
-int trustedcell_invoke_host(kuid_t uid, struct trustedcell_id *cell,
+int trustedcell_put_response(int64_t request_id, int permit, bool cachable);
+int trustedcell_invoke_host(bool *cachable,
+    kuid_t uid, struct trustedcell_id *cell,
     const char *category, const char *owner, const char *action,
     gfp_t gfp);
 

@@ -32,6 +32,7 @@ int trustedcell_decide(kuid_t uid, struct trustedcell_id *cell,
     const char *action, gfp_t gfp)
 {
   int status;
+  bool cachable;
   struct trustedcell_enforce_cache_item item = {
     .uid = uid.val,
     .cell = cell,
@@ -43,7 +44,11 @@ int trustedcell_decide(kuid_t uid, struct trustedcell_id *cell,
   if ((status = trustedcell_enforce_cache_match(item)) != -ENODATA) {
     return status;
   }
-  status = trustedcell_invoke_host(uid, cell, category, owner, action, gfp);
+  status = trustedcell_invoke_host(&cachable,
+      uid, cell, category, owner, action, gfp);
+  if (!cachable) {
+    return status;
+  }
   item.cell = cell;
   item.category = kstrdup(category, gfp);
   if (!item.category) {

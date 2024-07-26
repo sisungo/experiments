@@ -25,9 +25,9 @@ DEFINE_SPINLOCK(trustedcell_response_lock);
 static atomic64_t next_request_id = ATOMIC64_INIT(1);
 
 struct response_table_node {
+  struct hlist_node hlist;
   int64_t request_id;
   int permit;
-  struct hlist_node hlist;
 };
 
 static inline int64_t trustedcell_pull_request_id(void)
@@ -66,14 +66,15 @@ int trustedcell_recv_request(struct trustedcell_request *request) {
   return 0;
 }
 
-int trustedcell_put_response(int64_t request_id, int permit)
+int trustedcell_put_response(int64_t request_id, int permit, bool cachable)
 {
   struct response_table_node *node;
 
   spin_lock(&trustedcell_response_lock);
   hash_for_each_possible(trustedcell_response_table, node, hlist, request_id) {
     if (node->request_id == request_id) {
-      node->permit = permit;
+      node->permit = (permit ? TRUSTEDCELL_GRANTED: 0)
+        | (cachable ? TRUSTEDCELL_CACHABLE : 0);
       spin_unlock(&trustedcell_response_lock);
       wake_up_interruptible(&trustedcell_response_wait_queue);
       return 0;
@@ -108,7 +109,7 @@ static void trustedcell_unregister_response(struct response_table_node *node)
   kfree(node);
 }
 
-static int trustedcell_get_response(int64_t request_id)
+static int trustedcell_get_response(int64_t request_id, bool *cachable)
 {
   struct response_table_node *node;
   int permit;
@@ -116,7 +117,8 @@ static int trustedcell_get_response(int64_t request_id)
 	spin_lock(&trustedcell_response_lock);
 	hash_for_each_possible(trustedcell_response_table, node, hlist, request_id) {
 		if (node->request_id == request_id && node->permit != -1) {
-			permit = node->permit;
+			permit = !!(node->permit & TRUSTEDCELL_GRANTED);
+      *cachable = !!(node->permit & TRUSTEDCELL_CACHABLE);
       hash_del(&node->hlist);
       kfree(node);
       spin_unlock(&trustedcell_response_lock);
@@ -127,20 +129,21 @@ static int trustedcell_get_response(int64_t request_id)
 
 	spin_unlock(&trustedcell_response_lock);
 
-	return -1;
+	return -ENODATA;
 }
 
-static int trustedcell_wait_for_response(int64_t request_id)
+static int trustedcell_wait_for_response(int64_t request_id, bool *cachable)
 {
   int status;
   int permit;
 
   status = wait_event_interruptible(trustedcell_response_wait_queue, 
-      (permit = trustedcell_get_response(request_id)) >= 0);
+      (permit = trustedcell_get_response(request_id, cachable)) >= 0);
   return (status < 0 ? status : permit);
 }
 
-int trustedcell_invoke_host(kuid_t uid, struct trustedcell_id *cell,
+int trustedcell_invoke_host(bool *cachable,
+    kuid_t uid, struct trustedcell_id *cell,
     const char *category, const char *owner, const char *action,
     gfp_t gfp)
 {
@@ -179,7 +182,7 @@ int trustedcell_invoke_host(kuid_t uid, struct trustedcell_id *cell,
   if (status < 0) {
     goto out_unregister_response;
   }
-  status = trustedcell_wait_for_response(request_id);
+  status = trustedcell_wait_for_response(request_id, cachable);
   if (status < 0) {
     goto out_unregister_response;
   }

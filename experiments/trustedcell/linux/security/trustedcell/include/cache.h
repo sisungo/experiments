@@ -8,10 +8,12 @@
 #ifndef _SECURITY_TRUSTEDCELL_CACHE_H
 #define _SECURITY_TRUSTEDCELL_CACHE_H
 
-#include <linux/types.h>
+#include <linux/uidgid_types.h>
 
-#define TRUSTEDCELL_ENFORCE_CACHE_SLOTS 128
-#define TRUSTEDCELL_ENFORCE_CACHE_SLOT_SIZE 128
+#include "util.h"
+
+#define TRUSTEDCELL_ENFORCE_CACHE_SLOTS 256
+#define TRUSTEDCELL_ENFORCE_CACHE_SLOT_SIZE 64
 
 struct trustedcell_enforce_cache_item {
   uid_t uid;

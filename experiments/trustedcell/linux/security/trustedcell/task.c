@@ -16,7 +16,7 @@
 #include "include/task.h"
 
 static int hook_task_kill(struct task_struct *p, struct kernel_siginfo *info,
-int sig, const struct cred *cred)
+           int sig, const struct cred *cred)
 {
   return 0;
 }

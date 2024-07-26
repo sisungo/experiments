@@ -101,6 +101,47 @@ static int hook_inode_rmdir(struct inode *dir, struct dentry *dentry)
       "posix.rmdir", GFP_KERNEL);
 }
 
+static int hook_inode_mknod(struct inode *dir, struct dentry *dentry,
+           umode_t mode, dev_t dev)
+{
+  struct trustedcell_id *cell_id = trustedcell_get_current_cell_id();
+  if (!cell_id) {
+    return 0;
+  }
+  return trustedcell_decide(current_uid(), cell_id,
+      trustedcell_inode(d_inode(dentry))->category,
+      trustedcell_inode(d_inode(dentry))->owner,
+      "posix.mknod", GFP_KERNEL);
+}
+
+static int hook_inode_setxattr(struct mnt_idmap *mnt_idmap,
+           struct dentry *dentry, const char *name,
+           const void *value, size_t size, int flags)
+{
+  if (strcmp(name, TRUSTEDCELL_XATTR_CATEGORY) == 0) {
+    if (size > TRUSTEDCELL_CATEGORY_MAX || size == 0 || value == NULL) {
+      return -EINVAL;
+    }
+  } else if (strcmp(name, TRUSTEDCELL_XATTR_OWNER) == 0) {
+    if (size > TRUSTEDCELL_CELL_IDENTIFIER_MAX || size == 0 || value == NULL) {
+      return -EINVAL;
+    }
+  }
+  return 0;
+}
+
+static void hook_inode_post_setxattr(struct dentry *dentry, const char *name,
+           const void *value, size_t size, int flags)
+{
+  if (strcmp(name, TRUSTEDCELL_XATTR_CATEGORY) == 0) {
+    memcpy(trustedcell_inode(d_inode(dentry))->category, value, size);
+    trustedcell_inode(d_inode(dentry))->category[size] = '\0';
+  } else if (strcmp(name, TRUSTEDCELL_XATTR_OWNER) == 0) {
+    memcpy(trustedcell_inode(d_inode(dentry))->owner, value, size);
+    trustedcell_inode(d_inode(dentry))->owner[size] = '\0';
+  }
+}
+
 static void hook_d_instantiate(struct dentry *opt_dentry, struct inode *inode)
 {
   int status;
@@ -174,7 +215,10 @@ static struct security_hook_list trustedcell_hooks[] __ro_after_init = {
   LSM_HOOK_INIT(inode_create, hook_inode_create),
   LSM_HOOK_INIT(inode_unlink, hook_inode_unlink),
   LSM_HOOK_INIT(inode_mkdir, hook_inode_mkdir),
+  LSM_HOOK_INIT(inode_mknod, hook_inode_mknod),
   LSM_HOOK_INIT(inode_rmdir, hook_inode_rmdir),
+  LSM_HOOK_INIT(inode_setxattr, hook_inode_setxattr),
+  LSM_HOOK_INIT(inode_post_setxattr, hook_inode_post_setxattr),
 
   LSM_HOOK_INIT(d_instantiate, hook_d_instantiate),
 
