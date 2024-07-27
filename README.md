@@ -1,6 +1,10 @@
 # Experimental Field
 This repository stores my projects that are currently in experimental stage, or little scripts that are used for once.
 
+🚧🚧🚧🚧🚧🚧
+
+**⚠️ WARNING**: All experiments are incomplete and subject to change.
+
 ## List of Active Experiments
  - [`trustedcell`](experiments/trustedcell): Desktop-orinted, interactive LSM that implements application-based dynamic
  access control.
