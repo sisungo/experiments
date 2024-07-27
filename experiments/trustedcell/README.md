@@ -2,6 +2,9 @@
 TrustedCell is a security mechanism that provides application-based, dynamic access control for Linux desktop, implemented
 as a Linux Security Module.
 
+## Screenshots
+See [screenshots](screenshots).
+
 ## Core Principles
 A working TrustedCell environment consists of two parts: the kernel-space LSM and the userspace "host" server. The kernel-space
 LSM records subject and object contexts, and then requests the userspace "host" server to judge if the subject has access to
