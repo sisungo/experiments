@@ -22,3 +22,17 @@ This repository stores my projects that are currently in experimental stage, or 
 
 ## Miscellaneous Scripts
 Miscellaneous scripts, which are commonly single-file or domain-specific, are stored in the [`misc`](misc) directory.
+
+## FAQ
+**Q**: Will experiments keep experimental forever?
+
+**A**: These projects will not be always experimental. Some experiments will be moved into a standalone repository when they
+are no longer experimental.
+
+**Q**: I see the commit messages are strange. Why?
+
+**A**: In this repository, commit messages begin with `experiment: `, and the following is a sentence from motto or lyrics.
+
+**Q**: Can I make an issue or PR for one of the experiments?
+
+**A**: Yes.
