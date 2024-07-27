@@ -16,16 +16,17 @@
 #define TRUSTEDCELL_ENFORCE_CACHE_SLOT_SIZE 64
 
 struct trustedcell_enforce_cache_item {
-  uid_t uid;
-  struct trustedcell_id *cell;
-  const char *category;
-  const char *owner;
-  const char *action;
-  int resp;
+	uid_t uid;
+	struct trustedcell_id *cell;
+	const char *category;
+	const char *owner;
+	const char *action;
+	int resp;
 };
 
 void trustedcell_enforce_cache_init(void);
 int trustedcell_enforce_cache_add(struct trustedcell_enforce_cache_item item);
 int trustedcell_enforce_cache_match(struct trustedcell_enforce_cache_item item);
+void trustedcell_enforce_cache_clear(void);
 
 #endif /* _SECURITY_TRUSTEDCELL_CACHE_H */

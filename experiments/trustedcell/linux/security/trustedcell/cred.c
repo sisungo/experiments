@@ -16,45 +16,45 @@
 
 bool trustedcell_check_cell_identifier(const char *cell_identifier)
 {
-  if (*cell_identifier == 0) {
-    return false;
-  }
-  while (*cell_identifier) {
-    if (!isgraph(*cell_identifier)) {
-      return false;
-    }
-    cell_identifier++;
-  }
-  return true;
+	if (*cell_identifier == 0) {
+		return false;
+	}
+	while (*cell_identifier) {
+		if (!isgraph(*cell_identifier)) {
+			return false;
+		}
+		cell_identifier++;
+	}
+	return true;
 }
 
 static int hook_cred_prepare(struct cred *const new,
-           const struct cred *const old, const gfp_t gfp)
+			     const struct cred *const old, const gfp_t gfp)
 {
-  struct trustedcell_id *identifier = trustedcell_cred(old)->cell_id;
+	struct trustedcell_id *identifier = trustedcell_cred(old)->cell_id;
 
-  if (identifier) {
-    trustedcell_get_id(identifier);
-    trustedcell_cred(new)->cell_id = identifier;
-  }
-  return 0;
+	if (identifier) {
+		trustedcell_get_id(identifier);
+		trustedcell_cred(new)->cell_id = identifier;
+	}
+	return 0;
 }
 
 static void hook_cred_free(struct cred *const cred)
 {
-  struct trustedcell_id *identifier = trustedcell_cred(cred)->cell_id;
-  if (identifier) {
-    trustedcell_put_id(identifier);
-  }
+	struct trustedcell_id *identifier = trustedcell_cred(cred)->cell_id;
+	if (identifier) {
+		trustedcell_put_id(identifier);
+	}
 }
 
 static struct security_hook_list trustedcell_hooks[] __ro_after_init = {
-  LSM_HOOK_INIT(cred_prepare, hook_cred_prepare),
-  LSM_HOOK_INIT(cred_free, hook_cred_free),
+	LSM_HOOK_INIT(cred_prepare, hook_cred_prepare),
+	LSM_HOOK_INIT(cred_free, hook_cred_free),
 };
 
 __init void trustedcell_add_cred_hooks(void)
 {
-  security_add_hooks(trustedcell_hooks, ARRAY_SIZE(trustedcell_hooks),
-      &trustedcell_lsmid);
+	security_add_hooks(trustedcell_hooks, ARRAY_SIZE(trustedcell_hooks),
+			   &trustedcell_lsmid);
 }

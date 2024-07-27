@@ -12,24 +12,24 @@
 #include <linux/vmalloc.h>
 
 struct trustedcell_id {
-  const char *str;
-  struct kref refcount;
+	const char *str;
+	struct kref refcount;
 };
 
 static inline void trustedcell_init_id(struct trustedcell_id *data)
 {
-  kref_init(&data->refcount);
+	kref_init(&data->refcount);
 }
 
 static inline void trustedcell_get_id(struct trustedcell_id *data)
 {
-  kref_get(&data->refcount);
+	kref_get(&data->refcount);
 }
 
 void trustedcell_put_id(struct trustedcell_id *data);
 
 int trustedcell_decide(kuid_t uid, struct trustedcell_id *cell,
-    const char *category, const char *owner,
-    const char *action, gfp_t gfp);
+		       const char *category, const char *owner,
+		       const char *action, gfp_t gfp);
 
 #endif /* _SECURITY_TRUSTEDCELL_UTIL_H */

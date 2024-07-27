@@ -15,11 +15,17 @@
 #include "util.h"
 
 #define TRUSTEDCELL_INODE_INITIALIZED 8
+#define TRUSTEDCELL_SB_INITIALIZED 8
 
 struct trustedcell_inode_security {
-  char category[TRUSTEDCELL_CATEGORY_MAX];
-  char owner[TRUSTEDCELL_CELL_IDENTIFIER_MAX];
-  uint32_t flags;
+	char category[TRUSTEDCELL_CATEGORY_MAX];
+	char owner[TRUSTEDCELL_CELL_IDENTIFIER_MAX];
+	uint32_t flags;
+};
+struct trustedcell_sb_security {
+	char category[TRUSTEDCELL_CATEGORY_MAX];
+	char owner[TRUSTEDCELL_CELL_IDENTIFIER_MAX];
+	uint32_t flags;
 };
 
 __init void trustedcell_add_fs_hooks(void);
@@ -27,7 +33,13 @@ __init void trustedcell_add_fs_hooks(void);
 static inline struct trustedcell_inode_security *
 trustedcell_inode(const struct inode *const inode)
 {
-  return inode->i_security + trustedcell_blob_sizes.lbs_inode;
+	return inode->i_security + trustedcell_blob_sizes.lbs_inode;
+}
+
+static inline struct trustedcell_sb_security *
+trustedcell_sb(const struct super_block *const sb)
+{
+	return sb->s_security + trustedcell_blob_sizes.lbs_superblock;
 }
 
 #endif /* _SECURITY_TRUSTEDCELL_FS_H */

@@ -20,29 +20,30 @@ bool trustedcell_initialized __ro_after_init = false;
 pid_t trustedcell_host_tgid = 0;
 
 struct lsm_blob_sizes trustedcell_blob_sizes __ro_after_init = {
-  .lbs_cred = sizeof(struct trustedcell_cred_security),
-  .lbs_inode = sizeof(struct trustedcell_inode_security),
-  .lbs_xattr_count = 1,
+	.lbs_cred = sizeof(struct trustedcell_cred_security),
+	.lbs_inode = sizeof(struct trustedcell_inode_security),
+	.lbs_superblock = sizeof(struct trustedcell_sb_security),
+	.lbs_xattr_count = 2,
 };
 
 const struct lsm_id trustedcell_lsmid = {
-  .name = "trustedcell",
-  .id = LSM_ID_TRUSTEDCELL,
+	.name = "trustedcell",
+	.id = LSM_ID_TRUSTEDCELL,
 };
 
 static int __init trustedcell_init(void)
 {
-  trustedcell_enforce_cache_init();
-  trustedcell_add_cred_hooks();
-  trustedcell_add_task_hooks();
-  trustedcell_add_fs_hooks();
-  trustedcell_initialized = true;
-  pr_info("Kernel-space initialized.\n");
-  return 0;
+	trustedcell_enforce_cache_init();
+	trustedcell_add_cred_hooks();
+	trustedcell_add_task_hooks();
+	trustedcell_add_fs_hooks();
+	trustedcell_initialized = true;
+	pr_info("Kernel-space initialized.\n");
+	return 0;
 }
 
 DEFINE_LSM(TRUSTEDCELL_NAME) = {
-  .name = "trustedcell",
-  .init = trustedcell_init,
-  .blobs = &trustedcell_blob_sizes,
+	.name = "trustedcell",
+	.init = trustedcell_init,
+	.blobs = &trustedcell_blob_sizes,
 };
