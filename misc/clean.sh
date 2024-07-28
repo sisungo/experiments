@@ -5,7 +5,7 @@ function clean_rust_projects() {
     for i in $@; do
         cd $i
         rm -rf target/ Cargo.lock
-        cd ../
+        cd ${OLDPWD}
     done
 }
 
@@ -20,7 +20,7 @@ cd ../
 
 # Navigate to `/experiments`
 cd experiments
-clean_rust_projects txtfmt app-sandbox fat32x wav2bmp bmp2wav fat32x
+clean_rust_projects trustedcell/simpletrustedcelld trustedcell/trustedcelld  txtfmt app-sandbox fat32x wav2bmp bmp2wav fat32x
 cd ../
 
 # Navigate to `/archive`
