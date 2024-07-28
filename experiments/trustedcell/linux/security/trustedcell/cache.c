@@ -60,12 +60,12 @@ enforce_cache_item_match(struct trustedcell_enforce_cache_item *pattern,
 	return p;
 }
 
-static void enforce_cache_item_free(struct trustedcell_enforce_cache_item item)
+static void enforce_cache_item_free(struct trustedcell_enforce_cache_item *item)
 {
-	kfree(item.category);
-	kfree(item.owner);
-	kfree(item.action);
-	trustedcell_put_id(item.cell);
+	kfree(item->category);
+	kfree(item->owner);
+	kfree(item->action);
+	trustedcell_put_id(item->cell);
 }
 
 static void enforce_cache_node_free(struct rcu_head *rcu)
@@ -107,7 +107,7 @@ int trustedcell_enforce_cache_add(struct trustedcell_enforce_cache_item item)
 		hlist_for_each_entry(i, &enforce_cache.slots[slot], list) {
 			if (atomic_read(&i->popularity) <= avg_popularity) {
 				hlist_del_rcu(&i->list);
-				enforce_cache_item_free(i->item);
+				enforce_cache_item_free(&i->item);
 				call_rcu(&i->rcu, enforce_cache_node_free);
 			}
 		}
@@ -115,7 +115,7 @@ int trustedcell_enforce_cache_add(struct trustedcell_enforce_cache_item item)
 	hlist_for_each_entry(i, &enforce_cache.slots[slot], list) {
 		if (enforce_cache_item_match(&item, &i->item)) {
 			kfree(node);
-			enforce_cache_item_free(i->item);
+			enforce_cache_item_free(&i->item);
 			i->item = item;
 			spin_unlock_bh(&enforce_cache.slot_locks[slot]);
 			return 0;
@@ -136,7 +136,7 @@ void trustedcell_enforce_cache_clear(void)
 		spin_lock_bh(&enforce_cache.slot_locks[i]);
 		hlist_for_each_entry(node, &enforce_cache.slots[i], list) {
 			hlist_del_rcu(&node->list);
-			enforce_cache_item_free(node->item);
+			enforce_cache_item_free(&node->item);
 			call_rcu(&node->rcu, enforce_cache_node_free);
 		}
 		spin_unlock_bh(&enforce_cache.slot_locks[i]);
