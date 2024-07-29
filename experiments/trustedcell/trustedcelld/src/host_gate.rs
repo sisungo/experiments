@@ -87,6 +87,7 @@ pub struct Request {
     subject_cell: String,
     object_category: String,
     object_owner: String,
+    action: String,
 }
 impl Request {
     fn deserialize_from(buf: &[u8]) -> anyhow::Result<Self> {

@@ -8,9 +8,7 @@ impl HelperHub {
     pub fn listen(path: &Path) -> std::io::Result<Self> {
         let listener = UnixListener::bind(path)?;
 
-        HelperHubImpl {
-            listener,
-        }.start();
+        HelperHubImpl { listener }.start();
 
         Ok(Self {
             helpers: RwLock::default(),

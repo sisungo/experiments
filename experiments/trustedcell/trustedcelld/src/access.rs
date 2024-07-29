@@ -1,14 +1,26 @@
-use crate::{database::AccessDb, helper::HelperHub};
-
-pub struct AccessConductor {
-    access_db: AccessDb,
-    helper_hub: HelperHub,
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Subject {
+    pub uid: libc::uid_t,
+    pub cell: String,
 }
-impl AccessConductor {
-    pub fn new(access_db: AccessDb, helper_hub: HelperHub) -> Self {
-        Self {
-            access_db,
-            helper_hub,
-        }
-    }
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Object {
+    pub category: String,
+    pub owner: String,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct AccessVector {
+    pub subject: Subject,
+    pub object: Object,
+    pub action: String,
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Decision {
+    Allow,
+    AllowOnce,
+    Deny,
+    DenyOnce,
 }

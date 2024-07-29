@@ -1,9 +1,10 @@
 mod access;
+mod access_conductor;
 mod database;
 mod helper;
 mod host_gate;
 
-use access::AccessConductor;
+use access_conductor::AccessConductor;
 use clap::Parser;
 use database::AccessDb;
 use helper::HelperHub;
@@ -12,6 +13,7 @@ use std::{path::PathBuf, sync::Arc};
 use tokio::sync::Mutex;
 
 struct Context {
+    cmdline: Cmdline,
     host_reader: Mutex<HostReader>,
     host_writer: HostWriter,
     access_conductor: AccessConductor,
@@ -19,7 +21,7 @@ struct Context {
 impl Context {
     async fn run(self: Arc<Self>) -> anyhow::Result<()> {
         let mut host_reader = self.host_reader.lock().await;
-        
+
         loop {
             let request = host_reader.recv().await?;
         }
@@ -58,6 +60,7 @@ async fn main() -> anyhow::Result<()> {
     let helper_hub = HelperHub::listen(&cmdline.helper_hub_sock_path())?;
 
     Arc::new(Context {
+        cmdline,
         host_reader,
         host_writer,
         access_conductor: AccessConductor::new(access_db, helper_hub),
