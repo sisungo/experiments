@@ -126,8 +126,8 @@ static int hook_inode_mknod(struct inode *dir, struct dentry *dentry,
 		return 0;
 	}
 	return trustedcell_decide(current_uid(), cell_id,
-				  trustedcell_inode(d_inode(dir))->category,
-				  trustedcell_inode(d_inode(dir))->owner,
+				  trustedcell_inode(dir)->category,
+				  trustedcell_inode(dir)->owner,
 				  "posix.mknod", GFP_KERNEL);
 }
 
