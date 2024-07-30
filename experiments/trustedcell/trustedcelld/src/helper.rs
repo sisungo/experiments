@@ -1,3 +1,4 @@
+use crate::access::{AccessVector, Decision};
 use std::{collections::HashMap, path::Path, sync::Arc};
 use tokio::{net::UnixListener, sync::RwLock};
 
@@ -14,6 +15,10 @@ impl HelperHub {
             helpers: RwLock::default(),
         })
     }
+
+    pub async fn decide(&self, access_vector: &AccessVector) -> anyhow::Result<Decision> {
+        todo!()
+    }
 }
 
 pub struct Helper {}
@@ -29,6 +34,7 @@ impl HelperHubImpl {
     }
 
     async fn run(self) -> anyhow::Result<()> {
+        while let Ok(client) = self.listener.accept().await {}
         Ok(())
     }
 }
