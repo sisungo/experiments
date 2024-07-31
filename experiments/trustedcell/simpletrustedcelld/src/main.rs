@@ -80,9 +80,9 @@ fn format_request(request: &Request) -> String {
 }
 
 fn resp_ok(request: &Request) -> String {
-    format!("{} 1", request.request_id)
+    format!("{} 1 1", request.request_id)
 }
 
 fn resp_bad(request: &Request) -> String {
-    format!("{} 0", request.request_id)
+    format!("{} 0 1", request.request_id)
 }
