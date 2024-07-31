@@ -10,6 +10,6 @@ libc = "0.2"
 rusqlite = "0.32"
 serde = { version = "1", features = ["derive"] }
 smallvec = { version = "1", features = ["const_generics", "write"] }
-tokio = { version = "1", features = ["rt", "macros", "sync", "net"] }
+tokio = { version = "1", features = ["rt", "macros", "sync", "net", "io-util"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"

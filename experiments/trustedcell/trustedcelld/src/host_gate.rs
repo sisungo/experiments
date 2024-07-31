@@ -93,8 +93,28 @@ pub struct Request {
 impl Request {
     fn deserialize_from(buf: &[u8]) -> anyhow::Result<Self> {
         // NOTE: This is subject to change in the future, by how the kernel changes.
-        let buf = String::from_utf8_lossy(buf).as_ref();
-        todo!()
+        let buf = String::from_utf8_lossy(buf);
+        let mut splited = buf.split(' ');
+        let request_id = splited
+            .next()
+            .ok_or_else(|| anyhow!("bad request"))?
+            .parse()?;
+        let subject_uid = splited
+            .next()
+            .ok_or_else(|| anyhow!("bad request"))?
+            .parse()?;
+        let subject_cell = splited.next().ok_or_else(|| anyhow!("bad request"))?.into();
+        let object_category = splited.next().ok_or_else(|| anyhow!("bad request"))?.into();
+        let object_owner = splited.next().ok_or_else(|| anyhow!("bad request"))?.into();
+        let action = splited.next().ok_or_else(|| anyhow!("bad request"))?.into();
+        Ok(Self {
+            request_id,
+            subject_uid,
+            subject_cell,
+            object_category,
+            object_owner,
+            action,
+        })
     }
 
     pub fn id(&self) -> i64 {

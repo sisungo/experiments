@@ -12,7 +12,7 @@ use access_conductor::AccessConductor;
 use clap::Parser;
 use database::AccessDb;
 use helper::HelperHub;
-use host_gate::{HostReader, HostWriter, Request, Response};
+use host_gate::{HostReader, HostWriter, Response};
 use rule::Ruleset;
 use std::{path::PathBuf, sync::Arc};
 use tokio::sync::Mutex;
