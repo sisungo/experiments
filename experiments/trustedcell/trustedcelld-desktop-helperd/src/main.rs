@@ -11,14 +11,9 @@ pub enum Decision {
 }
 
 pub struct AccessVector {
-    subject: Subject,
+    subject_cell: String,
     object: Object,
     action: Action,
-}
-
-pub struct Subject {
-    uid: libc::uid_t,
-    cell: String,
 }
 
 pub struct Object {

@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 anyhow = "1"
 libc = "0.2"
+native-dialog = "0.7"
