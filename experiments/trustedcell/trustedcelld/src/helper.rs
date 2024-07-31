@@ -1,4 +1,5 @@
 use crate::access::{AccessVector, Decision};
+use anyhow::anyhow;
 use std::{collections::HashMap, path::Path, sync::Arc};
 use tokio::{net::UnixListener, sync::RwLock};
 
@@ -17,6 +18,12 @@ impl HelperHub {
     }
 
     pub async fn decide(&self, access_vector: &AccessVector) -> anyhow::Result<Decision> {
+        let helper = self
+            .helpers
+            .read()
+            .await
+            .get(&access_vector.subject.uid)
+            .ok_or_else(|| anyhow!("no such helper"))?;
         todo!()
     }
 }

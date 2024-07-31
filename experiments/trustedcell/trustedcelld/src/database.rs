@@ -24,6 +24,24 @@ impl AccessDb {
         Ok(Self { conn })
     }
 
+    pub fn remember(
+        &self,
+        access_vector: &AccessVector,
+        decision: Decision,
+    ) -> rusqlite::Result<()> {
+        let allowed = match decision {
+            Decision::Allow => true,
+            Decision::Deny => false,
+            _ => return Ok(()),
+        };
+        self.conn.execute(
+            r#"INSERT INTO access(subject_uid, subject_cell, object_category, object_owner, action, allowed)
+                VALUES(?1, ?2, ?3, ?4, ?5, ?6)"#,
+            params![&access_vector.subject.uid, &access_vector.subject.cell, &access_vector.object.category, &access_vector.object.owner, &access_vector.action, &allowed],
+        )?;
+        Ok(())
+    }
+
     pub fn decide(&self, access_vector: &AccessVector) -> rusqlite::Result<Option<Decision>> {
         let result = self.conn.query_row(
             r#"SELECT allowed FROM access WHERE

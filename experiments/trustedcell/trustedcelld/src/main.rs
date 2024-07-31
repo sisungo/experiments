@@ -7,6 +7,7 @@ mod helper;
 mod host_gate;
 mod rule;
 
+use access::Decision;
 use access_conductor::AccessConductor;
 use clap::Parser;
 use database::AccessDb;
@@ -28,6 +29,15 @@ impl Context {
 
         loop {
             let request = host_reader.recv().await?;
+            let access_vector = request.access_vector();
+            let decision = self
+                .access_conductor
+                .decide(&access_vector)
+                .await
+                .unwrap_or(Decision::Deny);
+            let response = Response::new(request.id(), decision);
+            self.host_writer.send_response(response).await?;
+            self.access_conductor.remember(&access_vector, decision)?;
         }
     }
 }

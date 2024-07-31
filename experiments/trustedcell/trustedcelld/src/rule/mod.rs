@@ -69,7 +69,6 @@ impl Rule {
 }
 
 pub struct Condition {
-    subject_uid: Matching<libc::uid_t>,
     subject_cell: Matching<String>,
     object_category: Matching<String>,
     object_owner: Matching<String>,
@@ -77,8 +76,7 @@ pub struct Condition {
 }
 impl Condition {
     pub fn covers(&self, access_vector: &AccessVector) -> bool {
-        self.subject_uid.may_match(&access_vector.subject.uid)
-            && self.subject_cell.may_match(&access_vector.subject.cell)
+        self.subject_cell.may_match(&access_vector.subject.cell)
             && self
                 .object_category
                 .may_match(&access_vector.object.category)
@@ -98,14 +96,26 @@ impl Condition {
                 Some(tup) => tup,
                 None => return Err(anyhow!("incomplete condition at {}", &tokens[0].span)),
             };
-        todo!()
+        let (category, owner) =
+            match obj.split_once(|tok| matches!(&tok.kind, Kind::Ident(x) if x == "of")) {
+                Some(tup) => tup,
+                None => return Err(anyhow!("incomplete condition at {}", &tokens[0].span)),
+            };
+        if action.is_empty() || sbj.is_empty() || category.is_empty() || owner.is_empty() {
+            return Err(anyhow!("incomplete condition at {}", &tokens[0].span));
+        }
+        Ok(Self {
+            subject_cell: Matching::from_token(&sbj[0])?,
+            object_category: Matching::from_token(&category[0])?,
+            object_owner: Matching::from_token(&owner[0])?,
+            action: Matching::from_token(&action[0])?,
+        })
     }
 }
 
 pub enum Matching<T> {
     Anything,
     Something(T),
-    Multiple(Vec<T>),
 }
 impl<T: PartialEq> Matching<T> {
     pub fn may_match(&self, val: &T) -> bool {
@@ -122,25 +132,6 @@ impl Matching<String> {
             Kind::Literal(x) => Ok(Self::Something(x.clone())),
             _ => Err(anyhow!(
                 "expected string literal or `*`, found `{:?}` at {}",
-                &tok.kind,
-                &tok.span
-            )),
-        }
-    }
-}
-impl Matching<libc::uid_t> {
-    pub fn from_token(tok: &Token) -> anyhow::Result<Self> {
-        match &tok.kind {
-            Kind::Ident(x) if x == "*" => Ok(Self::Anything),
-            Kind::Ident(x) => Ok(Self::Something(x.parse().map_err(|_| {
-                anyhow!(
-                    "expected UID integer literal or `*`, found `{:?}` at {}",
-                    &tok.kind,
-                    &tok.span
-                )
-            })?)),
-            _ => Err(anyhow!(
-                "expected integer literal or `*`, found `{:?}` at {}",
                 &tok.kind,
                 &tok.span
             )),

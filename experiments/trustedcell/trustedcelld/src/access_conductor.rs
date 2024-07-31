@@ -20,6 +20,11 @@ impl AccessConductor {
         }
     }
 
+    pub fn remember(&self, access_vector: &AccessVector, decision: Decision) -> anyhow::Result<()> {
+        self.access_db.remember(access_vector, decision)?;
+        Ok(())
+    }
+
     pub async fn decide(&self, access_vector: &AccessVector) -> anyhow::Result<Decision> {
         if let Some(decision) = self.access_db.decide(access_vector)? {
             return Ok(decision);

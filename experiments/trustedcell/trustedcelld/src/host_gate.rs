@@ -1,3 +1,4 @@
+use crate::access::{AccessVector, Decision, Object, Subject};
 use anyhow::anyhow;
 use smallvec::SmallVec;
 use std::{
@@ -91,8 +92,27 @@ pub struct Request {
 }
 impl Request {
     fn deserialize_from(buf: &[u8]) -> anyhow::Result<Self> {
+        // NOTE: This is subject to change in the future, by how the kernel changes.
         let buf = String::from_utf8_lossy(buf).as_ref();
         todo!()
+    }
+
+    pub fn id(&self) -> i64 {
+        self.request_id
+    }
+
+    pub fn access_vector(&self) -> AccessVector {
+        AccessVector {
+            subject: Subject {
+                uid: self.subject_uid,
+                cell: self.subject_cell.clone(),
+            },
+            object: Object {
+                category: self.object_category.clone(),
+                owner: self.object_owner.clone(),
+            },
+            action: self.action.clone(),
+        }
     }
 }
 
@@ -102,7 +122,33 @@ pub struct Response {
     cachable: bool,
 }
 impl Response {
+    pub fn new(request_id: i64, decision: Decision) -> Self {
+        match decision {
+            Decision::Allow => Self {
+                request_id,
+                allowed: true,
+                cachable: true,
+            },
+            Decision::AllowOnce => Self {
+                request_id,
+                allowed: true,
+                cachable: false,
+            },
+            Decision::Deny => Self {
+                request_id,
+                allowed: false,
+                cachable: true,
+            },
+            Decision::DenyOnce => Self {
+                request_id,
+                allowed: false,
+                cachable: false,
+            },
+        }
+    }
+
     fn serialize_to<const N: usize>(&self, buf: &mut SmallVec<[u8; N]>) -> std::io::Result<()> {
+        // NOTE: This is subject to change in the future, by how the kernel changes.
         write!(
             buf,
             "{} {} {}",
