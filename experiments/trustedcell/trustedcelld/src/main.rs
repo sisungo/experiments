@@ -1,3 +1,5 @@
+#![feature(slice_split_once)]
+
 mod access;
 mod access_conductor;
 mod database;
