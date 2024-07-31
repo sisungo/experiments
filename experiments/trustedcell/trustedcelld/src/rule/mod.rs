@@ -7,6 +7,7 @@ use std::path::Path;
 
 pub struct Ruleset {
     rules: Vec<Rule>,
+    private_categories: Vec<String>,
 }
 impl Ruleset {
     pub fn decide(&self, access_vector: &AccessVector) -> Option<bool> {
@@ -15,20 +16,47 @@ impl Ruleset {
                 return Some(decision);
             }
         }
+        if self
+            .private_categories
+            .contains(&access_vector.object.category)
+        {
+            if access_vector.subject.cell == access_vector.object.owner {
+                return Some(true);
+            }
+        }
         None
     }
 
     pub fn compile_file(path: &Path) -> anyhow::Result<Self> {
         let mut rules = Vec::new();
+        let mut private_categories = Vec::new();
         let tokens = lexer::process_file(path)?;
         let stmts = tokens.split(|token| token.kind == Kind::Semicolon);
         for stmt in stmts {
             if stmt.is_empty() {
                 continue;
             }
+            if matches!(&stmt[0].kind, Kind::Ident(x) if x == "auto_private") {
+                match stmt.get(1) {
+                    Some(x) => match &x.kind {
+                        Kind::Literal(y) => private_categories.push(y.to_owned()),
+                        _ => {
+                            return Err(anyhow!(
+                                "expected string literal, found `{:?}` at {}",
+                                &x.kind,
+                                &x.span
+                            ))
+                        }
+                    },
+                    None => return Err(anyhow!("incomplete auto_private at {}", &stmt[0].span)),
+                }
+            }
             rules.push(Rule::from_tokens(stmt)?);
         }
-        Ok(Self { rules })
+        Ok(Self {
+            private_categories,
+            rules,
+        })
     }
 }
 
