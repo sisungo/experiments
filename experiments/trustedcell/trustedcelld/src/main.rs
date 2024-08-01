@@ -18,7 +18,6 @@ use std::{path::PathBuf, sync::Arc};
 use tokio::sync::Mutex;
 
 struct Context {
-    cmdline: Cmdline,
     host_reader: Mutex<HostReader>,
     host_writer: HostWriter,
     access_conductor: AccessConductor,
@@ -34,7 +33,7 @@ impl Context {
                 .access_conductor
                 .decide(&access_vector)
                 .await
-                .unwrap_or(Decision::Deny);
+                .unwrap_or(Decision::DenyOnce);
             let response = Response::new(request.id(), decision);
             self.host_writer.send_response(response).await?;
             self.access_conductor.remember(&access_vector, decision)?;
@@ -44,16 +43,16 @@ impl Context {
 
 #[derive(Parser)]
 struct Cmdline {
-    #[arg(short, long, default_value = "/sys/kernel/security/trustedcell/host")]
+    #[arg(long, default_value = "/sys/kernel/security/trustedcell/host")]
     host_path: PathBuf,
 
-    #[arg(short, long, default_value = "/var/lib/trustedcelld")]
+    #[arg(long, default_value = "/var/lib/trustedcelld")]
     data_dir: PathBuf,
 
-    #[arg(short, long, default_value = "/var/run/trustedcelld")]
+    #[arg(long, default_value = "/var/run/trustedcelld")]
     runtime_dir: PathBuf,
 
-    #[arg(short, long, default_value = "/usr/share/trustedcelld")]
+    #[arg(long, default_value = "/usr/share/trustedcelld")]
     resource_dir: PathBuf,
 }
 impl Cmdline {
@@ -82,7 +81,6 @@ async fn main() -> anyhow::Result<()> {
     let helper_hub = HelperHub::listen(&cmdline.helper_hub_sock_path())?;
 
     Arc::new(Context {
-        cmdline,
         host_reader,
         host_writer,
         access_conductor: AccessConductor::new(access_db, ruleset, helper_hub),

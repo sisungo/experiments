@@ -50,6 +50,7 @@ impl Ruleset {
                     },
                     None => return Err(anyhow!("incomplete auto_private at {}", &stmt[0].span)),
                 }
+                continue;
             }
             rules.push(Rule::from_tokens(stmt)?);
         }

@@ -3,7 +3,10 @@ use anyhow::anyhow;
 use std::{collections::HashMap, path::Path, sync::Arc};
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter},
-    net::{unix::{OwnedWriteHalf, OwnedReadHalf}, UnixListener},
+    net::{
+        unix::{OwnedReadHalf, OwnedWriteHalf},
+        UnixListener,
+    },
     sync::{mpsc, oneshot, RwLock},
 };
 
@@ -65,12 +68,15 @@ struct HelperHubImpl {
 impl HelperHubImpl {
     fn start(self) {
         tokio::spawn(async move {
-            _ = self.run();
+            _ = self.run().await;
         });
     }
 
     async fn run(self) -> anyhow::Result<()> {
-        while let Ok((client, _)) = self.listener.accept().await {
+        loop {
+            let Ok((client, _)) = self.listener.accept().await else {
+                continue;
+            };
             let Ok(cred) = client.peer_cred() else {
                 continue;
             };
@@ -88,7 +94,6 @@ impl HelperHubImpl {
                 .await
                 .insert(cred.uid(), Arc::new(helper));
         }
-        Ok(())
     }
 }
 
@@ -100,7 +105,7 @@ struct HelperImpl {
 impl HelperImpl {
     fn start(self) {
         tokio::spawn(async move {
-            _ = self.run();
+            _ = self.run().await;
         });
     }
 
@@ -112,7 +117,7 @@ impl HelperImpl {
                     self.stream_w
                         .write_all(
                             format!(
-                                "{} {} {} {}",
+                                "{} {} {} {}\n",
                                 av.subject.cell, av.object.category, av.object.owner, av.action
                             )
                             .as_bytes(),

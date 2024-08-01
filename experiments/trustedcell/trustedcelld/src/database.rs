@@ -16,7 +16,7 @@ impl AccessDb {
                     object_category TEXT NOT NULL,
                     object_owner TEXT,
                     action TEXT NOT NULL,
-                    allowed BOOLEAN NOT NULL,
+                    allowed BOOLEAN NOT NULL
             )"#,
             params![],
         )?;
