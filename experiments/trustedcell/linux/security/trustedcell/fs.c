@@ -75,8 +75,8 @@ static int hook_inode_create(struct inode *dir, struct dentry *dentry,
 	if (!cell_id) {
 		return 0;
 	}
-	return trustedcell_decide(current_uid(), cell_id,
-				  trustedcell_inode(dir)->category,
+	return trustedcell_decide(trustedcell_get_current_initial_uid(),
+				  cell_id, trustedcell_inode(dir)->category,
 				  trustedcell_inode(dir)->owner,
 				  "posix.create_reg", GFP_KERNEL);
 }
@@ -87,7 +87,8 @@ static int hook_inode_unlink(struct inode *dir, struct dentry *dentry)
 	if (!cell_id) {
 		return 0;
 	}
-	return trustedcell_decide(current_uid(), cell_id,
+	return trustedcell_decide(trustedcell_get_current_initial_uid(),
+				  cell_id,
 				  trustedcell_inode(d_inode(dentry))->category,
 				  trustedcell_inode(d_inode(dentry))->owner,
 				  "posix.unlink", GFP_KERNEL);
@@ -100,8 +101,8 @@ static int hook_inode_mkdir(struct inode *dir, struct dentry *dentry,
 	if (!cell_id) {
 		return 0;
 	}
-	return trustedcell_decide(current_uid(), cell_id,
-				  trustedcell_inode(dir)->category,
+	return trustedcell_decide(trustedcell_get_current_initial_uid(),
+				  cell_id, trustedcell_inode(dir)->category,
 				  trustedcell_inode(dir)->owner, "posix.mkdir",
 				  GFP_KERNEL);
 }
@@ -112,7 +113,8 @@ static int hook_inode_rmdir(struct inode *dir, struct dentry *dentry)
 	if (!cell_id) {
 		return 0;
 	}
-	return trustedcell_decide(current_uid(), cell_id,
+	return trustedcell_decide(trustedcell_get_current_initial_uid(),
+				  cell_id,
 				  trustedcell_inode(d_inode(dentry))->category,
 				  trustedcell_inode(d_inode(dentry))->owner,
 				  "posix.rmdir", GFP_KERNEL);
@@ -125,10 +127,10 @@ static int hook_inode_mknod(struct inode *dir, struct dentry *dentry,
 	if (!cell_id) {
 		return 0;
 	}
-	return trustedcell_decide(current_uid(), cell_id,
-				  trustedcell_inode(dir)->category,
-				  trustedcell_inode(dir)->owner,
-				  "posix.mknod", GFP_KERNEL);
+	return trustedcell_decide(trustedcell_get_current_initial_uid(),
+				  cell_id, trustedcell_inode(dir)->category,
+				  trustedcell_inode(dir)->owner, "posix.mknod",
+				  GFP_KERNEL);
 }
 
 static int hook_inode_setxattr(struct mnt_idmap *mnt_idmap,

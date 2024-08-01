@@ -44,6 +44,7 @@ static ssize_t secfs_me_write(struct file *file, const char __user *ubuf,
 	struct trustedcell_id *cell_id;
 	char *cell_id_str;
 	struct cred *new_cred;
+	kuid_t uid = current_uid();
 
 	if (!trustedcell_initialized) {
 		return -EOPNOTSUPP;
@@ -66,10 +67,10 @@ static ssize_t secfs_me_write(struct file *file, const char __user *ubuf,
 	struct trustedcell_id *current_cell_id =
 		trustedcell_get_current_cell_id();
 	if (current_cell_id) {
-		status = trustedcell_decide(current_uid(), current_cell_id,
-					    "~trustedcell", cell_id_str,
-					    "trustedcell.change_cell",
-					    GFP_KERNEL);
+		status = trustedcell_decide(
+			trustedcell_get_current_initial_uid(), current_cell_id,
+			"~trustedcell", cell_id_str, "trustedcell.change_cell",
+			GFP_KERNEL);
 		if (status < 0 &&
 		    strcmp(cell_id_str, current_cell_id->str) != 0) {
 			goto out_free_cell_id_str;
@@ -88,6 +89,7 @@ static ssize_t secfs_me_write(struct file *file, const char __user *ubuf,
 		goto out_put_cell_id;
 	}
 	trustedcell_cred(new_cred)->cell_id = cell_id;
+	trustedcell_cred(new_cred)->initial_uid = uid;
 	if ((status = commit_creds(new_cred)) < 0) {
 		goto out_put_cell_id;
 	}
