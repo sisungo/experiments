@@ -110,7 +110,7 @@ impl HelperImpl {
                     self.stream
                         .send(
                             format!(
-                                "{} {} {} {}\n",
+                                "{} {} {} {}",
                                 av.subject.cell, av.object.category, av.object.owner, av.action
                             )
                             .as_bytes(),
