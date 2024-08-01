@@ -1,4 +1,6 @@
 use std::io::{Read, Write};
+use anyhow::anyhow;
+use crate::{AccessVector, Decision, Object};
 
 pub struct MessageProto<T>(T);
 impl<T> MessageProto<T>
@@ -25,5 +27,38 @@ where T: Write
 impl<T> From<T> for MessageProto<T> {
     fn from(value: T) -> Self {
         Self(value)
+    }
+}
+
+pub fn access_vector_of(s: &str) -> anyhow::Result<AccessVector> {
+    let mut splited = s.split(' ');
+        let subject_cell = splited
+            .next()
+            .ok_or_else(|| anyhow!("incomplete access vector"))?;
+        let object_category = splited
+            .next()
+            .ok_or_else(|| anyhow!("incomplete access vector"))?;
+        let object_owner = splited
+            .next()
+            .ok_or_else(|| anyhow!("incomplete access vector"))?;
+        let action = splited
+            .next()
+            .ok_or_else(|| anyhow!("incomplete access vector"))?;
+        Ok(AccessVector {
+            subject_cell: subject_cell.into(),
+            object: Object {
+                category: object_category.into(),
+                owner: object_owner.into(),
+            },
+            action: action.parse().unwrap(),
+        })
+}
+
+pub fn of_decision(decision: Decision) -> &'static [u8; 3] {
+    match decision {
+        Decision::Allow => b"1 1",
+        Decision::AllowOnce => b"1 0",
+        Decision::Deny => b"0 1",
+        Decision::DenyOnce => b"0 0",
     }
 }

@@ -1,8 +1,8 @@
 mod dialog;
 mod translations;
 mod daemon_gate;
+mod res;
 
-use anyhow::anyhow;
 use daemon_gate::MessageProto;
 use std::{
     convert::Infallible,
@@ -19,16 +19,6 @@ pub enum Decision {
     Deny,
     DenyOnce,
 }
-impl Decision {
-    fn serialize(self) -> &'static [u8; 3] {
-        match self {
-            Self::Allow => b"1 1",
-            Self::AllowOnce => b"1 0",
-            Self::Deny => b"0 1",
-            Self::DenyOnce => b"0 0",
-        }
-    }
-}
 
 pub struct AccessVector {
     subject_cell: String,
@@ -38,33 +28,6 @@ pub struct AccessVector {
 impl I18NToString for AccessVector {
     fn i18n_to_string(&self, lang: &dyn translations::Translation) -> String {
         lang.translate_access_vector(self)
-    }
-}
-impl FromStr for AccessVector {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut splited = s.split(' ');
-        let subject_cell = splited
-            .next()
-            .ok_or_else(|| anyhow!("incomplete access vector"))?;
-        let object_category = splited
-            .next()
-            .ok_or_else(|| anyhow!("incomplete access vector"))?;
-        let object_owner = splited
-            .next()
-            .ok_or_else(|| anyhow!("incomplete access vector"))?;
-        let action = splited
-            .next()
-            .ok_or_else(|| anyhow!("incomplete access vector"))?;
-        Ok(Self {
-            subject_cell: subject_cell.into(),
-            object: Object {
-                category: object_category.into(),
-                owner: object_owner.into(),
-            },
-            action: action.parse().unwrap(),
-        })
     }
 }
 
@@ -83,6 +46,7 @@ pub enum Action {
     OpenRo,
     OpenWo,
     OpenRw,
+    ReadDir,
     Mkdir,
     Mknod,
     CreateReg,
@@ -99,6 +63,7 @@ impl FromStr for Action {
             "posix.open_ro" => Self::OpenRo,
             "posix.open_wo" => Self::OpenWo,
             "posix.open_rw" => Self::OpenRw,
+            "posix.read_dir" => Self::ReadDir,
             "posix.mkdir" => Self::Mkdir,
             "posix.mknod" => Self::Mknod,
             "posix.create_reg" => Self::CreateReg,
@@ -117,8 +82,8 @@ fn main() -> anyhow::Result<()> {
     let mut sock = MessageProto::from(UnixStream::connect(&sock_path)?);
     loop {
         let buf = String::from_utf8(sock.recv()?)?;
-        let av = AccessVector::from_str(&buf)?;
+        let av = daemon_gate::access_vector_of(&buf)?;
         let decision = dialog::ask_for_permission(&av)?;
-        sock.send(decision.serialize())?;
+        sock.send(daemon_gate::of_decision(decision))?;
     }
 }
