@@ -1,10 +1,11 @@
 mod dialog;
 mod translations;
+mod daemon_gate;
 
 use anyhow::anyhow;
+use daemon_gate::MessageProto;
 use std::{
     convert::Infallible,
-    io::{BufRead, BufReader},
     os::unix::net::UnixStream,
     path::PathBuf,
     str::FromStr,
@@ -19,12 +20,12 @@ pub enum Decision {
     DenyOnce,
 }
 impl Decision {
-    fn serialize_into(self, buf: &mut dyn std::io::Write) -> std::io::Result<()> {
+    fn serialize(self) -> &'static [u8; 3] {
         match self {
-            Self::Allow => buf.write_all(b"1 1\n"),
-            Self::AllowOnce => buf.write_all(b"1 0\n"),
-            Self::Deny => buf.write_all(b"0 1\n"),
-            Self::DenyOnce => buf.write_all(b"0 0\n"),
+            Self::Allow => b"1 1",
+            Self::AllowOnce => b"1 0",
+            Self::Deny => b"0 1",
+            Self::DenyOnce => b"0 0",
         }
     }
 }
@@ -113,13 +114,11 @@ fn main() -> anyhow::Result<()> {
     let sock_path = std::env::var("TRUSTEDCELLD_SOCK")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("/var/run/trustedcelld/helper_hub.sock"));
-    let mut sock = BufReader::new(UnixStream::connect(&sock_path)?);
-    let mut buf = String::new();
+    let mut sock = MessageProto::from(UnixStream::connect(&sock_path)?);
     loop {
-        buf.clear();
-        sock.read_line(&mut buf)?;
+        let buf = String::from_utf8(sock.recv()?)?;
         let av = AccessVector::from_str(&buf)?;
         let decision = dialog::ask_for_permission(&av)?;
-        decision.serialize_into(sock.get_mut())?;
+        sock.send(decision.serialize())?;
     }
 }

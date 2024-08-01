@@ -33,9 +33,7 @@ pub struct HostWriter {
 }
 impl HostWriter {
     pub fn open(path: &Path) -> std::io::Result<Self> {
-        let file = File::options()
-            .write(true)
-            .open(path)?;
+        let file = File::options().write(true).open(path)?;
         let (tx, rx) = mpsc::channel(16);
         std::thread::spawn(move || HostWriterImpl { file, rx }.run());
         Ok(Self { tx })

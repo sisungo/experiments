@@ -2,11 +2,8 @@ use crate::access::{AccessVector, Decision};
 use anyhow::anyhow;
 use std::{collections::HashMap, path::Path, sync::Arc};
 use tokio::{
-    io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter},
-    net::{
-        unix::{OwnedReadHalf, OwnedWriteHalf},
-        UnixListener,
-    },
+    io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
+    net::{UnixListener, UnixStream},
     sync::{mpsc, oneshot, RwLock},
 };
 
@@ -81,10 +78,8 @@ impl HelperHubImpl {
                 continue;
             };
             let (tx, rx) = mpsc::channel(16);
-            let (stream_r, stream_w) = client.into_split();
             HelperImpl {
-                stream_r: BufReader::new(stream_r),
-                stream_w: BufWriter::new(stream_w),
+                stream: MessageProto(client),
                 rx,
             }
             .start();
@@ -98,8 +93,7 @@ impl HelperHubImpl {
 }
 
 struct HelperImpl {
-    stream_r: BufReader<OwnedReadHalf>,
-    stream_w: BufWriter<OwnedWriteHalf>,
+    stream: MessageProto<UnixStream>,
     rx: mpsc::Receiver<Command>,
 }
 impl HelperImpl {
@@ -110,12 +104,11 @@ impl HelperImpl {
     }
 
     async fn run(mut self) -> anyhow::Result<()> {
-        let mut buf = String::with_capacity(4);
         while let Some(x) = self.rx.recv().await {
             match x {
                 Command::AskForPermission(av, chan) => {
-                    self.stream_w
-                        .write_all(
+                    self.stream
+                        .send(
                             format!(
                                 "{} {} {} {}\n",
                                 av.subject.cell, av.object.category, av.object.owner, av.action
@@ -123,9 +116,8 @@ impl HelperImpl {
                             .as_bytes(),
                         )
                         .await?;
-                    buf.clear();
-                    self.stream_r.read_line(&mut buf).await?;
-                    let mut splited = buf.split_whitespace();
+                    let buf = String::from_utf8(self.stream.recv().await?)?;
+                    let mut splited = buf.split(' ');
                     let allowed = splited
                         .next()
                         .ok_or_else(|| anyhow!("corrupt response"))?
@@ -150,6 +142,29 @@ impl HelperImpl {
                 }
             }
         }
+        Ok(())
+    }
+}
+
+struct MessageProto<T>(T);
+impl<T> MessageProto<T>
+where
+    T: AsyncRead + Unpin,
+{
+    async fn recv(&mut self) -> anyhow::Result<Vec<u8>> {
+        let len = self.0.read_u32_le().await?;
+        let mut buf = vec![0u8; len as usize];
+        self.0.read_exact(&mut buf).await?;
+        Ok(buf)
+    }
+}
+impl<T> MessageProto<T>
+where
+    T: AsyncWrite + Unpin,
+{
+    async fn send(&mut self, buf: &[u8]) -> anyhow::Result<()> {
+        self.0.write_u32_le(buf.len() as u32).await?;
+        self.0.write_all(buf).await?;
         Ok(())
     }
 }
