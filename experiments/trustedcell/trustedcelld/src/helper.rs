@@ -2,8 +2,8 @@ use crate::access::{AccessVector, Decision};
 use anyhow::anyhow;
 use std::{collections::HashMap, path::Path, sync::Arc};
 use tokio::{
-    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
-    net::{UnixListener, UnixStream},
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter},
+    net::{unix::{OwnedWriteHalf, OwnedReadHalf}, UnixListener},
     sync::{mpsc, oneshot, RwLock},
 };
 
@@ -75,8 +75,10 @@ impl HelperHubImpl {
                 continue;
             };
             let (tx, rx) = mpsc::channel(16);
+            let (stream_r, stream_w) = client.into_split();
             HelperImpl {
-                stream: BufReader::new(client),
+                stream_r: BufReader::new(stream_r),
+                stream_w: BufWriter::new(stream_w),
                 rx,
             }
             .start();
@@ -91,7 +93,8 @@ impl HelperHubImpl {
 }
 
 struct HelperImpl {
-    stream: BufReader<UnixStream>,
+    stream_r: BufReader<OwnedReadHalf>,
+    stream_w: BufWriter<OwnedWriteHalf>,
     rx: mpsc::Receiver<Command>,
 }
 impl HelperImpl {
@@ -106,7 +109,7 @@ impl HelperImpl {
         while let Some(x) = self.rx.recv().await {
             match x {
                 Command::AskForPermission(av, chan) => {
-                    self.stream
+                    self.stream_w
                         .write_all(
                             format!(
                                 "{} {} {} {}",
@@ -116,7 +119,7 @@ impl HelperImpl {
                         )
                         .await?;
                     buf.clear();
-                    self.stream.read_line(&mut buf).await?;
+                    self.stream_r.read_line(&mut buf).await?;
                     let mut splited = buf.split_whitespace();
                     let allowed = splited
                         .next()

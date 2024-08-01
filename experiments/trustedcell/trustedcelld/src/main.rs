@@ -66,7 +66,7 @@ impl Cmdline {
     }
 
     fn helper_hub_sock_path(&self) -> PathBuf {
-        self.runtime_dir.join("helper_hub.db")
+        self.runtime_dir.join("helper_hub.sock")
     }
 }
 
