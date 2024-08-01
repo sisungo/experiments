@@ -6,5 +6,8 @@ allow "posix.mkdir" on "~appcache" of "?" from *;
 auto_private "~appdata";
 auto_private "~appcache";
 
+// Allow applications to do anything in their own procfs directory.
+auto_private "~proc";
+
 // Allow applications to access unknown files.
 allow * on "?" of * from *;
