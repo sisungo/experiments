@@ -31,12 +31,13 @@ bool trustedcell_check_cell_identifier(const char *cell_identifier)
 static int hook_cred_prepare(struct cred *const new,
 			     const struct cred *const old, const gfp_t gfp)
 {
-	struct trustedcell_id *identifier = trustedcell_cred(old)->cell_id;
+	*trustedcell_cred(new) = *trustedcell_cred(old);
 
+	struct trustedcell_id *identifier = trustedcell_cred(new)->cell_id;
 	if (identifier) {
 		trustedcell_get_id(identifier);
-		trustedcell_cred(new)->cell_id = identifier;
 	}
+
 	return 0;
 }
 
