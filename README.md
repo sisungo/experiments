@@ -6,11 +6,22 @@ This repository stores my projects that are currently in experimental stage, or 
 **⚠️ WARNING**: All experiments are incomplete and subject to change.
 
 ## List of Active Experiments
+These experiments are currently under active development.
+
  - [`trustedcell`](experiments/trustedcell): Desktop-orinted, interactive LSM that implements application-based dynamic
  access control.
  - [`landlockwrap`](experiments/landlockwrap/): An app sandboxing tool for Linux, built on the top of Landlock. Originally `app-sandbox`.
 
+## List of Future Experiments
+These experiments are currently under development, but not public yet.
+
+ - `patina-lang`: A new strong-and-statically-typed programming language, running on the top of PatinaVM.
+ - `patina-vm`: A language virtual machine which mainly focus on interpreter mode, providing dynamic features like GC,
+ reflection, dynamic code executation, stackful coroutines, etc, and small in size. Aiming to have similar usage to Lua.
+
 ## List of Inactive Experiments
+These experiments are not actively maintained.
+
  - [`app-sandbox`](archive/app-sandbox): An app sandboxing tool for Linux, built on the top of Landlock. Replaced by new experiment `landlockwrap`.
  - [`kawaii-rustc`](archive/kawaii-rustc): rustc 也要变得可爱！！！
  - [`randvoca`](archive/randvoca): A small tool to generate random vocabulary list for an artifact language.
