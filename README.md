@@ -8,10 +8,10 @@ This repository stores my projects that are currently in experimental stage, or 
 ## List of Active Experiments
  - [`trustedcell`](experiments/trustedcell): Desktop-orinted, interactive LSM that implements application-based dynamic
  access control.
- - [`app-sandbox`](experiments/app-sandbox/): An app sandboxing tool for Linux, built on the top of Landlock.
-
+ - [`landlockwrap`](experiments/landlockwrap/): An app sandboxing tool for Linux, built on the top of Landlock. Originally `app-sandbox`.
 
 ## List of Inactive Experiments
+ - [`app-sandbox`](archive/app-sandbox): An app sandboxing tool for Linux, built on the top of Landlock. Replaced by new experiment `landlockwrap`.
  - [`kawaii-rustc`](archive/kawaii-rustc): rustc 也要变得可爱！！！
  - [`randvoca`](archive/randvoca): A small tool to generate random vocabulary list for an artifact language.
  - [`fat32x`](archive/fat32x/): FUSE filesystem built on the top of FAT32, which wraps the FAT32 filesystem to support

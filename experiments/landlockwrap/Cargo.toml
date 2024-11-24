@@ -1,0 +1,9 @@
+[package]
+name = "landlockwrap"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+peg = "0.8"
+landlock = "0.4"
