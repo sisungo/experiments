@@ -20,10 +20,10 @@ cd ../
 
 # Navigate to `/experiments`
 cd experiments
-clean_rust_projects trustedcell/simpletrustedcelld trustedcell/trustedcelld app-sandbox
+clean_rust_projects trustedcell/simpletrustedcelld trustedcell/trustedcelld landlockwrap
 cd ../
 
 # Navigate to `/archive`
 cd archive
-clean_rust_projects randvoca fat32x txtfmt wav2bmp bmp2wav
+clean_rust_projects randvoca fat32x txtfmt wav2bmp bmp2wav app-sandbox
 cd ../
