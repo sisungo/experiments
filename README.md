@@ -15,6 +15,7 @@ These experiments are currently under active development.
 ## List of Future Experiments
 These experiments are currently under development, but not public yet.
 
+ - `pessica`: A highly flexible hybrid kernel for operating systems.
  - `patina-lang`: A new strong-and-statically-typed programming language, running on the top of PatinaVM.
  - `patina-vm`: A language virtual machine which mainly focus on interpreter mode, providing dynamic features like GC,
  reflection, dynamic code executation, stackful coroutines, etc, and small in size. Aiming to have similar usage to Lua.
