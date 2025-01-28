@@ -28,9 +28,9 @@ xattr was found. For example, when deciding category of `/home/somebody/Music/mu
  - xattr `security.tc_category` of `/home/somebody/Music` == `-ENODATA`: try fetching from parent;
  - xattr `security.tc_category` of `/home/somebody` == `"user_home"`: return `"user_home"`.
 
-Kernel APIs are used, in order to avoid TOCTOU vulnerabilities. If category's name starts `~`, the category is an Owner-Aware
-Category. Generally, access checks are category-only, however, owners are in consideration if the category is owner-aware. This
-convention affects caching.
+Kernel APIs are used, in order to avoid TOCTOU vulnerabilities. Generally, access checks are category-aware-only. If the category's
+name starts `~`, the category is an Owner-Aware Category, which means, when checking access to objects in the category, TrustedCell
+owners \(`security.tc_owner`\) are also taken into consideration. This convention affects caching.
 
 An userspace host server opens `/sys/kernel/security/trustedcell/host` to handle TrustedCell requests. The file can only be
 opened by one process\(task group\) at the same time and the process must run as `root` when opening the file, for security
