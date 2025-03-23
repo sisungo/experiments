@@ -1,9 +1,13 @@
+//! Music format converting script.
+//! 
+//! This tool is used to add music files to the music library (at [`MUSIC_LIBRARY_DIR`]).
+
 use std::path::{Path, PathBuf};
 use toolkit::*;
 
 // Working Directories
-const MUSIC_LIBRARY_DIR: &str = "/Volumes/Roaming/Music";
-const MUSIC_CONVERT_WORK_DIR: &str = "/Volumes/Roaming/Downloads/tmp.musicqueue/tmp.1111";
+const MUSIC_LIBRARY_DIR: &str = "/Volumes/sisungo.Roaming/Music";
+const MUSIC_CONVERT_WORK_DIR: &str = "/Volumes/sisungo.Roaming/Downloads/tmp.musicqueue/tmp.1111";
 
 // Parameters
 const VALID_BITRATES: &[&str] = &["32k", "48k", "64k", "96k", "128k", "192k", "256k", "320k"];
