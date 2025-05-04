@@ -1,0 +1,8 @@
+/.env
+/.DS_Store
+/.vscode
+/.zed
+/.idea
+/.cargo
+/target
+/Cargo.lock
