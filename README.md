@@ -10,7 +10,8 @@ These experiments are currently under active development.
 
  - [`trustedcell`](experiments/trustedcell): Desktop-orinted, interactive LSM that implements application-based dynamic
  access control.
- - [`landlockwrap`](experiments/landlockwrap/): An app sandboxing tool for Linux, built on the top of Landlock. Originally `app-sandbox`.
+ - [`landlockwrap`](experiments/landlockwrap): An app sandboxing tool for Linux, built on the top of Landlock. Originally `app-sandbox`.
+ - [`vinyld`](experiments/vinyld): A Spotify-like web music backend service.
 
 ## List of Future Experiments
 These experiments are currently under development, but not public yet.
